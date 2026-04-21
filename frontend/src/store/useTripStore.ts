@@ -4,6 +4,8 @@ export interface Destination {
   id: string;
   name: string;
   imageUrl?: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export type ActivityType = 'flight' | 'hotel' | 'restaurant' | 'museum' | 'other';

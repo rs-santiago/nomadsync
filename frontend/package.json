@@ -13,8 +13,10 @@
     "@clerk/clerk-react": "^5.61.5",
     "@hello-pangea/dnd": "^18.0.1",
     "lucide-react": "^1.8.0",
+    "mapbox-gl": "^3.22.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "react-map-gl": "^8.1.1",
     "socket.io-client": "^4.8.3",
     "zustand": "^5.0.12"
   },

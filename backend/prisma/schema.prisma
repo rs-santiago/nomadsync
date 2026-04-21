@@ -32,6 +32,8 @@ model Destination {
   tripId    String
   name      String
   imageUrl  String?
+  latitude  Float?
+  longitude Float?
   order     Int        @default(0)
   createdAt DateTime   @default(now())
 

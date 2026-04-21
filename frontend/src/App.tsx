@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react'; // Ícone de carregamento
 import { SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
 import { useAuth } from "@clerk/clerk-react";
 import { TripList } from './components/TripList';
+import { TripMap } from './components/TripMap';
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
@@ -16,6 +17,7 @@ function App() {
   const [onlineUsers, setOnlineUsers] = useState<{ id: string, name: string, color: string }[]>([]);
   const { getToken, isSignedIn } = useAuth();
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
+  const destinations = useTripStore((state) => state.destinations);
 
   const {
     setInitialData,
@@ -246,15 +248,19 @@ function App() {
             <Header isConnected={isConnected} onlineUsers={onlineUsers} tripId={activeTripId} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-1">
-                <div className="sticky top-8"> {/* Sticky para o form não sumir no scroll */}
-                  <AddDestinationForm tripId={activeTripId} />
-                </div>
+  
+              {/* COLUNA ESQUERDA: Formulário e Mapa */}
+              <div className="lg:col-span-1 flex flex-col gap-8"> 
+                <AddDestinationForm tripId={activeTripId} />
+                {/* Passamos os destinos que já buscamos para desenhar os pins */}
+                <TripMap destinations={destinations || []} />
               </div>
-
+              
+              {/* COLUNA DIREITA: A lista grande de cartões com fotos */}
               <div className="lg:col-span-2">
                 <DestinationList tripId={activeTripId} />
               </div>
+
             </div>
           </>
         )}

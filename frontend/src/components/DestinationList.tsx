@@ -6,6 +6,7 @@ import { socket } from '../lib/socket';
 
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
+import { useAuth } from '@clerk/clerk-react';
 interface DestinationListProps {
   tripId: string;
   imageUrl?: string;
@@ -16,6 +17,7 @@ export function DestinationList({ tripId }: DestinationListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newActivityTitle, setNewActivityTitle] = useState('');
   const [newActivityType, setNewActivityType] = useState<ActivityType>('other');
+  const { getToken } = useAuth();
 
   // Função disparada quando você solta o item
   const onDragEnd = (result: DropResult) => {
@@ -49,10 +51,23 @@ export function DestinationList({ tripId }: DestinationListProps) {
   };
 
   // Funções de Ação
-  const handleDeleteDestination = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Evita que o clique feche/abra o acordeão
-    removeLocalDestination(id);
-    socket.emit('removeDestination', { tripId: tripId, destinationId: id });
+  const handleDeleteDestination = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Impede que o acordeão abra/feche ao clicar no excluir
+    
+    if (!confirm("Tem certeza que deseja remover este destino?")) return;
+
+    try {
+      const token = await getToken();
+      await fetch(`${import.meta.env.VITE_API_URL}/destinations/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      // Atualiza a Store local (Zustand)
+      removeLocalDestination(id); 
+    } catch (error) {
+      console.error("Erro ao deletar:", error);
+    }
   };
 
   const handleAddActivity = (destId: string, e: React.FormEvent) => {

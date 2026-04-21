@@ -6,6 +6,7 @@ import { prisma } from './lib/prisma';
 import { requireAuth } from './middleware/auth';
 import { createClerkClient } from '@clerk/clerk-sdk-node';
 import { getDestinationImage } from './services/unsplash';
+import { getCoordinates } from './services/mapbox';
 
 const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY || '' });
 
@@ -137,15 +138,20 @@ app.post('/trips/:tripId/destinations', async (req, res) => {
   const { name } = req.body;
   const { tripId } = req.params;
 
-  // 📸 BUSCA A FOTO AUTOMATICAMENTE
+  // 1. Busca a foto no Unsplash (que já fizemos)
   const imageUrl = await getDestinationImage(name);
+  
+  // 2. 📍 Busca as coordenadas no Mapbox
+  const coords = await getCoordinates(name);
 
+  // 3. Salva tudo no banco de dados
   const newDestination = await prisma.destination.create({
     data: {
       name: name,
       tripId: tripId,
-      imageUrl: imageUrl, // Certifique-se de que este campo existe no seu schema.prisma
-      // ... outros campos (ordem, etc)
+      imageUrl: imageUrl,
+      latitude: coords?.latitude,   // 👈 Salva a latitude se encontrou
+      longitude: coords?.longitude, // 👈 Salva a longitude se encontrou
     }
   });
 
@@ -153,6 +159,23 @@ app.post('/trips/:tripId/destinations', async (req, res) => {
   io.to(tripId).emit('destination_added', newDestination);
   
   res.json(newDestination);
+});
+
+app.delete('/destinations/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deleted = await prisma.destination.delete({
+      where: { id }
+    });
+
+    // Avisa todo mundo via Socket que esse destino sumiu
+    io.to(deleted.tripId).emit('destination_deleted', id);
+    
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao deletar destino" });
+  }
 });
 
 const server = http.createServer(app);
