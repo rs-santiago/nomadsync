@@ -35,15 +35,53 @@ app.post('/trips', requireAuth, async (req: any, res) => {
   }
 });
 
+app.post('/trips/:id/join', requireAuth, async (req: any, res: any) => {
+  const userId = req.auth.userId; // ID de quem clicou no link
+  const tripId = req.params.id;   // ID da viagem
+
+  try {
+    const trip = await prisma.trip.findUnique({ where: { id: tripId } });
+    
+    if (!trip) {
+      return res.status(404).json({ error: 'Viagem não encontrada' });
+    }
+
+    // Se a pessoa já for o dono ou já estiver na lista, não faz nada
+    if (trip.ownerId === userId || trip.participants.includes(userId)) {
+      return res.json({ message: 'Você já faz parte desta viagem!', tripId });
+    }
+
+    // Adiciona o ID do amigo no array de participantes
+    await prisma.trip.update({
+      where: { id: tripId },
+      data: {
+        participants: {
+          push: userId // O 'push' empurra o novo ID para dentro da lista
+        }
+      }
+    });
+
+    res.json({ message: 'Convite aceito com sucesso!', tripId });
+  } catch (error) {
+    console.error("Erro ao entrar na viagem:", error);
+    res.status(500).json({ error: 'Erro ao processar convite' });
+  }
+});
+
 // ==========================================
-// 👇 2. A SUA ROTA AQUI: Listar TODAS as viagens do usuário (Fixa)
+// 👇 Rota de LISTAR as viagens no Dashboard
 // ==========================================
 app.get('/trips', requireAuth, async (req: any, res) => {
   const userId = req.auth.userId;
 
   try {
     const trips = await prisma.trip.findMany({
-      where: { ownerId: userId },
+      where: { 
+        OR: [
+          { ownerId: userId }, // Se eu for o dono...
+          { participants: { has: userId } } // OU se eu for um convidado!
+        ]
+       },
       orderBy: { createdAt: 'desc' } // Ordena das mais recentes para as mais antigas
     });
     
@@ -60,8 +98,11 @@ app.get('/trips/:id', requireAuth, async (req: any, res) => {
   const userId = req.auth.userId;
 
   try {
+    // 1. Vai no banco e busca SÓ pelo ID da viagem
     const trip = await prisma.trip.findUnique({
-      where: { id },
+      where: { 
+        id
+     },
       include: { 
         destinations: { 
           include: { activities: true },
@@ -70,8 +111,18 @@ app.get('/trips/:id', requireAuth, async (req: any, res) => {
       }
     });
 
-    if (!trip || trip.ownerId !== userId) {
-      return res.status(403).json({ error: 'Acesso negado ou viagem não encontrada' });
+    // 2. Se não achou nada, devolve erro 404 (Not Found)
+    if (!trip) {
+      return res.status(404).json({ error: 'Viagem não encontrada' });
+    }
+
+    // 3. A trava de segurança: O cara é o dono OU está na lista?
+    const isOwner = trip.ownerId === userId;
+    const isParticipant = trip.participants.includes(userId);
+
+    if (!isOwner && !isParticipant) {
+      // 403 Forbidden: Sei que a viagem existe, mas você não entra.
+      return res.status(403).json({ error: 'Você não tem permissão para acessar este roteiro' });
     }
 
     res.json(trip);

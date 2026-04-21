@@ -21,6 +21,8 @@ model Trip {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  participants String[] @default([])
+
   destinations Destination[]
 }
 
