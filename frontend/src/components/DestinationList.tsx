@@ -8,7 +8,6 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 interface DestinationListProps {
   tripId: string;
-  name: string;
   imageUrl?: string;
 }
 
