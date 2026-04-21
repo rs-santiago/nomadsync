@@ -34,6 +34,9 @@ interface TripState {
   syncRemoteActivity: (act: Activity) => void;
   removeLocalActivity: (id: string) => void;
   syncRemoveActivity: (id: string) => void;
+
+  focusedDestinationId: string | null;
+  setFocusedDestination: (id: string | null) => void;
 }
 
 export const useTripStore = create<TripState>((set) => ({
@@ -44,10 +47,25 @@ export const useTripStore = create<TripState>((set) => ({
     set({ destinations, activities }),
 
   addLocalDestination: (dest) => 
-    set((state) => ({ destinations: [...state.destinations, dest] })),
-    
+    set((state) => {
+        // Verifica se já existe para não duplicar
+        const exists = state.destinations.find(d => d.id === dest.id);
+        if (exists) return state;
+        return { destinations: [...state.destinations, dest] };
+    }),
+  focusedDestinationId: null,
+  setFocusedDestination: (id) => set({ focusedDestinationId: id }),
   syncRemoteDestination: (dest) => 
-    set((state) => ({ destinations: [...state.destinations, dest] })),
+    set((state) => {
+        // Se o destino já existe, atualiza ele (preservando fotos/coordenadas)
+        const exists = state.destinations.find(d => d.id === dest.id);
+        if (exists) {
+        return {
+            destinations: state.destinations.map(d => d.id === dest.id ? { ...d, ...dest } : d)
+        };
+        }
+        return { destinations: [...state.destinations, dest] };
+    }),
 
   removeLocalDestination: (id) =>
     set((state) => ({

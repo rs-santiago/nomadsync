@@ -42,7 +42,9 @@ export function AddDestinationForm({ tripId }: AddDestinationFormProps) {
 
       // 3. Recebe a resposta OFICIAL (agora sim, com ID do Prisma e imageUrl!)
       const savedDestination = await response.json();
-
+      
+      console.log("💎 Recebido do Backend após salvar:", savedDestination); // O dado TEM QUE ter imageUrl aqui
+      
       // 4. Atualiza a tela com o dado verdadeiro
       addLocalDestination(savedDestination);
       

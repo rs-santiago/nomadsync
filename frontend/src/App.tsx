@@ -61,7 +61,7 @@ function App() {
         const destinosSeguros = tripData.destinations || [];
 
         destinosSeguros.forEach((dest: any) => {
-          loadedDestinations.push({ id: dest.id, name: dest.name });
+          loadedDestinations.push({ ...dest });
 
           if (dest.activities) {
             dest.activities.forEach((act: any) => {
@@ -119,7 +119,7 @@ function App() {
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('presenceUpdate', setOnlineUsers);
-    socket.on('updateTripMap', (data) => syncRemoteDestination({ id: data.destinationId, name: data.destination }));
+    socket.on('updateTripMap', (data) => syncRemoteDestination({ ...data }));
     socket.on('destinationRemoved', (data) => syncRemoveDestination(data.destinationId));
     socket.on('activityAdded', (data) => syncRemoteActivity(data.activity));
     socket.on('activityRemoved', (data) => syncRemoveActivity(data.activityId));

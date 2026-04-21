@@ -150,8 +150,18 @@ app.post('/trips/:tripId/destinations', async (req, res) => {
       name: name,
       tripId: tripId,
       imageUrl: imageUrl,
-      latitude: coords?.latitude,   // 👈 Salva a latitude se encontrou
-      longitude: coords?.longitude, // 👈 Salva a longitude se encontrou
+      latitude: coords?.latitude,
+      longitude: coords?.longitude,
+    },
+    // 👇 ADICIONE ISSO para forçar o Prisma a devolver tudo
+    select: {
+      id: true,
+      name: true,
+      imageUrl: true,
+      latitude: true,
+      longitude: true,
+      tripId: true,
+      order: true
     }
   });
 
@@ -175,6 +185,55 @@ app.delete('/destinations/:id', async (req, res) => {
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: "Erro ao deletar destino" });
+  }
+});
+
+app.post('/destinations/:destinationId/activities', async (req, res) => {
+  const { title, type, startTime, cost, notes } = req.body;
+  const { destinationId } = req.params;
+
+  try {
+    const newActivity = await prisma.activity.create({
+      data: {
+        title,
+        type,
+        startTime: startTime ? new Date(startTime) : null,
+        cost: Number(cost) || 0,
+        notes,
+        destinationId
+      }
+    });
+
+    // Buscamos o destino para saber o tripId e avisar via Socket
+    const dest = await prisma.destination.findUnique({ 
+      where: { id: destinationId },
+      select: { tripId: true }
+    });
+
+    if (dest) {
+      io.to(dest.tripId).emit('activity_added', { activity: newActivity });
+    }
+
+    res.json(newActivity);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao criar atividade" });
+  }
+});
+
+app.delete('/activities/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Apaga a atividade no banco de dados usando o ID
+    await prisma.activity.delete({
+      where: { id }
+    });
+
+    // Retorna status 204 (No Content), que significa "Deu tudo certo e não tenho nada a retornar"
+    res.status(204).send();
+  } catch (error) {
+    console.error("Erro ao deletar atividade:", error);
+    res.status(500).json({ error: "Erro ao deletar a atividade" });
   }
 });
 
@@ -247,8 +306,7 @@ io.on('connection', (socket) => {
         });
 
         socket.broadcast.to(data.tripId).emit('updateTripMap', {
-            destinationId: newDest.id,
-            destination: newDest.name
+            ...newDest
         });
         } catch (error) {
         console.error("Erro ao salvar destino:", error);
@@ -301,25 +359,11 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('addActivity', async (data: { tripId: string, activity: any }) => {
-        await prisma.activity.create({
-            data: {
-                id: data.activity.id,
-                destinationId: data.activity.destinationId,
-                title: data.activity.title,
-                type: data.activity.type,
-                cost: data.activity.cost
-            }
-        });
-
-        socket.broadcast.to(data.tripId).emit('activityAdded', { activity: data.activity });
+    socket.on('addActivity', (data: { tripId: string, activity: any }) => {
+        socket.broadcast.to(data.tripId).emit('activityAdded', data);
     });
 
     socket.on('removeActivity', async (data: { tripId: string, activityId: string }) => {
-        await prisma.activity.delete({
-            where: { id: data.activityId }
-        });
-
         socket.broadcast.to(data.tripId).emit('activityRemoved', { activityId: data.activityId });
     });
 
