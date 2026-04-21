@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { socket } from './lib/socket';
 import { useTripStore } from './store/useTripStore';
-import type { Destination, Activity } from './store/useTripStore';
 
 import { Header } from './components/Header';
 import { AddDestinationForm } from './components/AddDestinationForm';
