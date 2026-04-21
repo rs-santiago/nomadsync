@@ -8,6 +8,8 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 interface DestinationListProps {
   tripId: string;
+  name: string;
+  imageUrl?: string;
 }
 
 export function DestinationList({ tripId }: DestinationListProps) {
@@ -96,7 +98,8 @@ export function DestinationList({ tripId }: DestinationListProps) {
               {destinations.map((dest, index) => {
                 const isExpanded = expandedId === dest.id;
                 const destActivities = activities.filter(a => a.destinationId === dest.id);
-
+                // 👇 ADICIONE ESTA LINHA AQUI 👇
+                console.log(`Dados do destino ${dest.name}:`, dest);
                 return (
                   <Draggable key={dest.id} draggableId={dest.id} index={index}>
                     {(provided, snapshot) => (
@@ -112,9 +115,24 @@ export function DestinationList({ tripId }: DestinationListProps) {
                               <GripVertical size={20} />
                             </div>
 
-                            <div className="bg-slate-100 text-slate-500 font-bold w-8 h-8 rounded-full flex items-center justify-center text-sm">
+                            <div className="bg-slate-100 text-slate-500 font-bold w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0">
                               {index + 1}
                             </div>
+
+                            {/* 👇 A FOTO DO UNSPLASH ENTRA AQUI 👇 */}
+                            <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-slate-100 flex items-center justify-center border border-slate-200">
+                              {dest.imageUrl ? (
+                                <img 
+                                  src={dest.imageUrl} 
+                                  alt={dest.name} 
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                />
+                              ) : (
+                                <MapPin size={20} className="text-slate-400" />
+                              )}
+                            </div>
+                            {/* 👆 FIM DA FOTO 👆 */}
+
                             <span className="text-slate-800 font-medium text-lg">{dest.name}</span>
                           </div>
 
@@ -126,7 +144,7 @@ export function DestinationList({ tripId }: DestinationListProps) {
                           </div>
                         </div>
 
-                        {/* CORPO DO ACORDEÃO (Atividades) */}
+                        {/* CORPO DO ACORDEÃO (Atividades) - MANTIDO EXATAMENTE IGUAL */}
                         {isExpanded && (
                           <div className="p-4 bg-slate-50 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
 

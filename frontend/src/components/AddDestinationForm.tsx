@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTripStore } from '../store/useTripStore';
-import { socket } from '../lib/socket';
+import { useAuth } from '@clerk/clerk-react'; // 👈 Importamos o Clerk para segurança
 
 interface AddDestinationFormProps {
   tripId: string;
@@ -8,50 +8,71 @@ interface AddDestinationFormProps {
 
 export function AddDestinationForm({ tripId }: AddDestinationFormProps) {
   const [newDestination, setNewDestination] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const addLocalDestination = useTripStore((state) => state.addLocalDestination);
+  const { getToken } = useAuth();
 
-  const handleAddDestination = (e: React.FormEvent) => {
-    e.preventDefault(); // Impede a página de recarregar
+  const handleAddDestination = async (e: React.FormEvent) => {
+    e.preventDefault(); 
     
-    if (!newDestination.trim()) {
-      console.log("O campo de texto está vazio!");
+    if (!newDestination.trim() || isSubmitting) {
       return;
     }
 
-    console.log("Adicionando na viagem:", tripId);
+    setIsSubmitting(true); // Trava o botão para não dar clique duplo
 
-    const newId = `dest-${Date.now()}`;
-    
-    // 1. Atualiza a tela (Optimistic UI)
-    addLocalDestination({ id: newId, name: newDestination });
-    
-    // 2. Manda pro backend
-    socket.emit('newDestinationAdded', { 
-      tripId: tripId, 
-      destinationName: newDestination, 
-      destinationId: newId 
-    });
-    
-    // 3. Limpa o texto
-    setNewDestination('');
+    try {
+      // 1. Pega o token de segurança do usuário logado
+      const token = await getToken();
+
+      // 2. Faz o POST para a nossa rota no Backend (que busca a foto e salva no BD)
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/trips/${tripId}/destinations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name: newDestination })
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao salvar no servidor');
+      }
+
+      // 3. Recebe a resposta OFICIAL (agora sim, com ID do Prisma e imageUrl!)
+      const savedDestination = await response.json();
+
+      // 4. Atualiza a tela com o dado verdadeiro
+      addLocalDestination(savedDestination);
+      
+      // 5. Limpa o texto
+      setNewDestination('');
+    } catch (error) {
+      console.error("Erro ao adicionar destino:", error);
+      alert("Ops! Houve um erro ao buscar a foto ou salvar o destino.");
+    } finally {
+      setIsSubmitting(false); // Libera o botão
+    }
   };
 
   return (
-    // Certifique-se de que a tag é <form> e tem o onSubmit!
-    <form onSubmit={handleAddDestination} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-4">
+    <form onSubmit={handleAddDestination} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-4 sticky top-8">
       <h3 className="font-bold text-slate-800">Nova Parada</h3>
       <input 
         type="text" 
         placeholder="Ex: Paris, França" 
         value={newDestination}
         onChange={(e) => setNewDestination(e.target.value)}
-        className="border border-slate-200 rounded-xl p-3 outline-none focus:border-blue-500 transition-colors"
+        disabled={isSubmitting}
+        className="border border-slate-200 rounded-xl p-3 outline-none focus:border-blue-500 transition-colors disabled:bg-slate-50 disabled:text-slate-400"
       />
       <button 
         type="submit" 
-        className="bg-slate-900 text-white rounded-xl p-3 font-bold hover:bg-slate-800 transition-colors"
+        disabled={isSubmitting}
+        className="bg-slate-900 text-white rounded-xl p-3 font-bold hover:bg-slate-800 transition-colors flex items-center justify-center disabled:bg-slate-400"
       >
-        + Adicionar ao Roteiro
+        {isSubmitting ? 'Buscando foto...' : '+ Adicionar ao Roteiro'}
       </button>
     </form>
   );

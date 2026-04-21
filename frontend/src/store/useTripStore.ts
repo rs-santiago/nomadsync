@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export interface Destination {
   id: string;
   name: string;
+  imageUrl: string;
 }
 
 export type ActivityType = 'flight' | 'hotel' | 'restaurant' | 'museum' | 'other';

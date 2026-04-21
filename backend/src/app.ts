@@ -5,6 +5,7 @@ import cors from 'cors';
 import { prisma } from './lib/prisma';
 import { requireAuth } from './middleware/auth';
 import { createClerkClient } from '@clerk/clerk-sdk-node';
+import { getDestinationImage } from './services/unsplash';
 
 const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY || '' });
 
@@ -130,6 +131,28 @@ app.get('/trips/:id', requireAuth, async (req: any, res) => {
     console.error("Erro ao procurar viagem específica:", error);
     res.status(500).json({ error: 'Erro ao procurar viagem' });
   }
+});
+
+app.post('/trips/:tripId/destinations', async (req, res) => {
+  const { name } = req.body;
+  const { tripId } = req.params;
+
+  // 📸 BUSCA A FOTO AUTOMATICAMENTE
+  const imageUrl = await getDestinationImage(name);
+
+  const newDestination = await prisma.destination.create({
+    data: {
+      name: name,
+      tripId: tripId,
+      imageUrl: imageUrl, // Certifique-se de que este campo existe no seu schema.prisma
+      // ... outros campos (ordem, etc)
+    }
+  });
+
+  // Emite via Socket para todo mundo ver a foto nova na hora!
+  io.to(tripId).emit('destination_added', newDestination);
+  
+  res.json(newDestination);
 });
 
 const server = http.createServer(app);
