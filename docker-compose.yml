@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # -----------------------------------------------------------
+  # 🗄️ BANCO DE DADOS RELACIONAL (PostgreSQL)
+  # -----------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: nomadsync-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_DB: nomadsync_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - nomadsync-pg-data:/var/lib/postgresql/data
+    networks:
+      - nomadsync-network
+
+  # -----------------------------------------------------------
+  # ⚡ CACHE & SESSÕES WEBSOCKETS (Redis)
+  # -----------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: nomadsync-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - nomadsync-redis-data:/data
+    networks:
+      - nomadsync-network
+
+  # -----------------------------------------------------------
+  # 📬 SISTEMA DE MENSAGERIA (RabbitMQ)
+  # -----------------------------------------------------------
+  rabbitmq:
+    # Usando a versão 'management' para termos a interface visual na porta 15672
+    image: rabbitmq:3-management-alpine
+    container_name: nomadsync-rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      # Porta de comunicação padrão
+      - "5672:5672"
+      # Porta do painel visual (Dashboard)
+      - "15672:15672"
+    networks:
+      - nomadsync-network
+
+  # -----------------------------------------------------------
+  # ⚙️ BACKEND (Node.js API) - Preparação
+  # -----------------------------------------------------------
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: nomadsync-backend
+  #   ports:
+  #     - "3333:3333"
+  #   environment:
+  #     DATABASE_URL: "postgresql://root:rootpassword@postgres:5432/nomadsync_db?schema=public"
+  #     REDIS_URL: "redis://redis:6379"
+  #     RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #     - rabbitmq
+  #   networks:
+  #     - nomadsync-network
+
+  # -----------------------------------------------------------
+  # 🖥️ FRONTEND (React) - Preparação
+  # -----------------------------------------------------------
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: nomadsync-frontend
+  #   ports:
+  #     - "5173:5173" # Porta padrão do Vite
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - nomadsync-network
+
+# -----------------------------------------------------------
+# 📦 VOLUMES (Para não perder os dados quando o container parar)
+# -----------------------------------------------------------
+volumes:
+  nomadsync-pg-data:
+  nomadsync-redis-data:
+
+# -----------------------------------------------------------
+# 🌐 REDE (Para os containers conversarem entre si isolados da sua máquina)
+# -----------------------------------------------------------
+networks:
+  nomadsync-network:
+    driver: bridge

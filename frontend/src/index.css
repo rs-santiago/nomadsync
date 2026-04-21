@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Uma corzinha de fundo global para dar aquele ar de 'SaaS' */
+body {
+  @apply bg-slate-50 text-slate-800;
+}

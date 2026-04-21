@@ -1,0 +1,23 @@
+# Dependências
+node_modules/
+
+# Arquivos de Build de Produção (A Vercel vai gerar isso lá na nuvem)
+dist/
+dist-ssr/
+
+# Arquivos de cache locais
+.eslintcache
+.vite/
+
+# Variáveis de Ambiente (MUITO IMPORTANTE NÃO SUBIR ISSO)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Arquivos de log e Sistema Operacional
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
