@@ -38,7 +38,7 @@ function App() {
 
       try {
         const token = await getToken();
-        const response = await fetch(`http://localhost:3333/trips/${activeTripId}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/trips/${activeTripId}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }

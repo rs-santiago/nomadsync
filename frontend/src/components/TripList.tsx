@@ -25,7 +25,7 @@ export function TripList({ onSelectTrip }: TripListProps) {
       try {
         const token = await getToken();
         // Chama a nossa nova rota do backend
-        const response = await fetch('http://localhost:3333/trips', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/trips`, {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Cache-Control': 'no-cache', // Evita cache para sempre pegar os dados mais recentes
@@ -54,7 +54,7 @@ export function TripList({ onSelectTrip }: TripListProps) {
     if (!newTripTitle.trim()) return; // Não deixa criar viagem sem nome
     try {
       const token = await getToken();
-      const response = await fetch('http://localhost:3333/trips', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/trips`, {
         method: 'POST', // 👈 Chama a rota de criação
         headers: { 
           'Authorization': `Bearer ${token}`,
