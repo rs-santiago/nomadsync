@@ -71,9 +71,9 @@ io.on('connection', (socket) => {
             } else {
                 console.log(`❌ Viagem ${tripId} não encontrada no banco.`);
             }
-            } catch (error) {
-                console.error("Erro ao buscar viagem no socket:", error);
-            }
+        } catch (error) {
+            console.error("Erro ao buscar viagem no socket:", error);
+        }
     });
 
     socket.on('newDestinationAdded', async (data) => {

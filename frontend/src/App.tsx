@@ -105,10 +105,9 @@ function App() {
 
     setupSocket();
 
-    // function onConnect() {
-    //   setIsConnected(true);
-    //   socket.emit('joinTripPlanning', activeTripId);
-    // }
+    function onConnect() {
+      setIsConnected(true);
+    }
 
     function onDisconnect() {
       setIsConnected(false);
@@ -122,6 +121,7 @@ function App() {
     const handleReordered = (data: any) => reorderDestinations(data.startIndex, data.endIndex);
 
     // 2. LIGAMOS os ouvintes
+    socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('presenceUpdate', handlePresence);
     socket.on('updateTripMap', handleUpdateMap);
@@ -132,6 +132,7 @@ function App() {
 
     return () => {
       // 3. DESLIGAMOS os ouvintes cirurgicamente quando sair da viagem
+      socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off('presenceUpdate', handlePresence);
       socket.off('updateTripMap', handleUpdateMap);
