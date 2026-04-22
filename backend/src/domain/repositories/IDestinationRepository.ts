@@ -3,6 +3,9 @@ export interface CreateDestinationData {
   startDate?: Date | null;
   endDate?: Date | null;
   tripId: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  imageUrl?: string | null;
 }
 
 export interface IDestinationRepository {

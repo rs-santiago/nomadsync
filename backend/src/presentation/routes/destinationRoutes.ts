@@ -4,14 +4,19 @@ import { CreateDestinationUseCase } from '../../application/use-cases/CreateDest
 import { ListDestinationsUseCase } from '../../application/use-cases/ListDestinationsUseCase';
 import { DeleteDestinationUseCase } from '../../application/use-cases/DeleteDestinationUseCase';
 import { DestinationController } from '../controllers/DestinationController';
+import { MapboxLocationService } from '../../infrastructure/services/MapboxLocationService';
+import { UnsplashPhotoService } from '../../infrastructure/services/UnsplashPhotoService';
 
 const destinationRoutes = Router();
 
 // 1. Instanciamos o banco
 const destinationRepository = new PrismaDestinationRepository();
+// Instancia os novos serviços
+const locationService = new MapboxLocationService();
+const photoService = new UnsplashPhotoService();
 
 // 2. Instanciamos os Casos de Uso
-const createUseCase = new CreateDestinationUseCase(destinationRepository);
+const createUseCase = new CreateDestinationUseCase(destinationRepository, locationService, photoService);
 const listUseCase = new ListDestinationsUseCase(destinationRepository);
 const deleteUseCase = new DeleteDestinationUseCase(destinationRepository);
 

@@ -10,7 +10,11 @@ export class PrismaDestinationRepository implements IDestinationRepository {
         name: data.name,
         startDate: data.startDate ?? null,
         endDate: data.endDate ?? null,
-        tripId: data.tripId
+        tripId: data.tripId,
+
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
+        imageUrl: data.imageUrl ?? null
       }
     });
   }
