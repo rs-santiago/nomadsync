@@ -19,7 +19,10 @@ export class PrismaTripRepository implements ITripRepository {
   async findAll(ownerId: string) {
     return await prisma.trip.findMany({
       where: {
-        ownerId
+        OR: [
+          { ownerId }, // Viagens onde o usuário é o dono
+          { participants: { has: ownerId } } // Viagens onde o usuário é participante
+        ]
       },
       include: {
         // Ele diz ao Prisma para fazer o "JOIN" e trazer os destinos
