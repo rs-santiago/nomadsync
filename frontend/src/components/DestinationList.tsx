@@ -17,7 +17,7 @@ export function DestinationList({ tripId }: DestinationListProps) {
   const { destinations, activities, removeLocalDestination, addLocalActivity, removeLocalActivity, reorderDestinations } = useTripStore();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const setFocusedDestination = useTripStore((state) => state.setFocusedDestination);
-  
+  const setActiveTrip = useTripStore((state) => state.setActiveTrip);
   const [newActivityTitle, setNewActivityTitle] = useState('');
   const [newActivityType, setNewActivityType] = useState<ActivityType>('other');
   const [isSubmittingActivity, setIsSubmittingActivity] = useState(false);

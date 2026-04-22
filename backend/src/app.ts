@@ -22,15 +22,20 @@ app.get('/health', (req, res) => {
 // 1. Rota de CRIAR nova viagem (Fixa)
 app.post('/trips', requireAuth, async (req: any, res) => {
   const userId = req.auth.userId;
-  const { title } = req.body;
+  const { title, startDate, endDate } = req.body;
   try {
-    const novaViagem = await prisma.trip.create({
+    const coverImage = await getDestinationImage(title);
+    const newTrip = await prisma.trip.create({
       data: {
         title: title || 'Novo Roteiro',
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        imageUrl: coverImage,
         ownerId: userId 
       }
     });
-    res.json(novaViagem);
+
+    res.status(201).json(newTrip);
   } catch (error) {
     console.error("Erro ao criar viagem:", error);
     res.status(500).json({ error: 'Erro ao criar' });
@@ -234,6 +239,23 @@ app.delete('/activities/:id', async (req, res) => {
   } catch (error) {
     console.error("Erro ao deletar atividade:", error);
     res.status(500).json({ error: "Erro ao deletar a atividade" });
+  }
+});
+
+app.delete('/trips/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Apaga a viagem (se você configurou onDelete: Cascade no Prisma, 
+    // ele já vai apagar os destinos e atividades dentro dela automaticamente!)
+    await prisma.trip.delete({
+      where: { id }
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error("Erro ao deletar viagem:", error);
+    res.status(500).json({ error: "Erro ao deletar a viagem" });
   }
 });
 

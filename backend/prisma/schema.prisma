@@ -16,6 +16,11 @@ model Trip {
   id            String        @id @default(uuid())
   ownerId       String
   title         String
+  
+  imageUrl    String?  
+  startDate   DateTime? 
+  endDate     DateTime?
+
   description   String?
   status        String        @default("planning")
   createdAt     DateTime      @default(now())
@@ -36,7 +41,7 @@ model Destination {
   order     Int        @default(0)
 
   activities Activity[]
-  
+
   trip       Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
   tripId    String
   
