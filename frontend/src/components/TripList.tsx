@@ -60,7 +60,7 @@ export function TripList({ onSelectTrip }: TripListProps) {
 
     try {
       const token = await getToken();
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/trips/${tripId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/destinations/${tripId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

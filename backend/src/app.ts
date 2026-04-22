@@ -3,14 +3,17 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { prisma } from './lib/prisma';
-import { requireAuth } from './middleware/auth';
+import { verifyToken } from '@clerk/clerk-sdk-node';    
 import { createClerkClient } from '@clerk/clerk-sdk-node';
-import { getDestinationImage } from './services/unsplash';
-import { getCoordinates } from './services/mapbox';
+import { tripRoutes } from './presentation/routes/tripRoutes';
+import { destinationRoutes } from './presentation/routes/destinationRoutes';
+import { activityRoutes } from './presentation/routes/activityRoutes';
 
 const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY || '' });
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(cors());
 app.use(express.json());
@@ -20,267 +23,29 @@ app.get('/health', (req, res) => {
 });
 
 // 1. Rota de CRIAR nova viagem (Fixa)
-app.post('/trips', requireAuth, async (req: any, res) => {
-  const userId = req.auth.userId;
-  const { title, startDate, endDate } = req.body;
-  try {
-    const coverImage = await getDestinationImage(title);
-    const newTrip = await prisma.trip.create({
-      data: {
-        title: title || 'Novo Roteiro',
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        imageUrl: coverImage,
-        ownerId: userId 
-      }
-    });
-
-    res.status(201).json(newTrip);
-  } catch (error) {
-    console.error("Erro ao criar viagem:", error);
-    res.status(500).json({ error: 'Erro ao criar' });
-  }
-});
-
-app.post('/trips/:id/join', requireAuth, async (req: any, res: any) => {
-  const userId = req.auth.userId; // ID de quem clicou no link
-  const tripId = req.params.id;   // ID da viagem
-
-  try {
-    const trip = await prisma.trip.findUnique({ where: { id: tripId } });
-    
-    if (!trip) {
-      return res.status(404).json({ error: 'Viagem não encontrada' });
-    }
-
-    // Se a pessoa já for o dono ou já estiver na lista, não faz nada
-    if (trip.ownerId === userId || trip.participants.includes(userId)) {
-      return res.json({ message: 'Você já faz parte desta viagem!', tripId });
-    }
-
-    // Adiciona o ID do amigo no array de participantes
-    await prisma.trip.update({
-      where: { id: tripId },
-      data: {
-        participants: {
-          push: userId // O 'push' empurra o novo ID para dentro da lista
-        }
-      }
-    });
-
-    res.json({ message: 'Convite aceito com sucesso!', tripId });
-  } catch (error) {
-    console.error("Erro ao entrar na viagem:", error);
-    res.status(500).json({ error: 'Erro ao processar convite' });
-  }
-});
-
-// ==========================================
-// 👇 Rota de LISTAR as viagens no Dashboard
-// ==========================================
-app.get('/trips', requireAuth, async (req: any, res) => {
-  const userId = req.auth.userId;
-
-  try {
-    const trips = await prisma.trip.findMany({
-      where: { 
-        OR: [
-          { ownerId: userId }, // Se eu for o dono...
-          { participants: { has: userId } } // OU se eu for um convidado!
-        ]
-       },
-      orderBy: { createdAt: 'desc' } // Ordena das mais recentes para as mais antigas
-    });
-    
-    res.json(trips);
-  } catch (error) {
-    console.error("Erro ao buscar no banco:", error);
-    res.status(500).json({ error: 'Erro interno' });
-  }
-});
-
-// 3. Rota de BUSCAR UMA viagem ESPECÍFICA (Dinâmica)
-app.get('/trips/:id', requireAuth, async (req: any, res) => {
-  const { id } = req.params;
-  const userId = req.auth.userId;
-
-  try {
-    // 1. Vai no banco e busca SÓ pelo ID da viagem
-    const trip = await prisma.trip.findUnique({
-      where: { 
-        id
-     },
-      include: { 
-        destinations: { 
-          include: { activities: true },
-          orderBy: { order: 'asc' }
-        } 
-      }
-    });
-
-    // 2. Se não achou nada, devolve erro 404 (Not Found)
-    if (!trip) {
-      return res.status(404).json({ error: 'Viagem não encontrada' });
-    }
-
-    // 3. A trava de segurança: O cara é o dono OU está na lista?
-    const isOwner = trip.ownerId === userId;
-    const isParticipant = trip.participants.includes(userId);
-
-    if (!isOwner && !isParticipant) {
-      // 403 Forbidden: Sei que a viagem existe, mas você não entra.
-      return res.status(403).json({ error: 'Você não tem permissão para acessar este roteiro' });
-    }
-
-    res.json(trip);
-  } catch (error) {
-    console.error("Erro ao procurar viagem específica:", error);
-    res.status(500).json({ error: 'Erro ao procurar viagem' });
-  }
-});
-
-app.post('/trips/:tripId/destinations', async (req, res) => {
-  const { name } = req.body;
-  const { tripId } = req.params;
-
-  // 1. Busca a foto no Unsplash (que já fizemos)
-  const imageUrl = await getDestinationImage(name);
-  
-  // 2. 📍 Busca as coordenadas no Mapbox
-  const coords = await getCoordinates(name);
-
-  // 3. Salva tudo no banco de dados
-  const newDestination = await prisma.destination.create({
-    data: {
-      name: name,
-      tripId: tripId,
-      imageUrl: imageUrl,
-      latitude: coords?.latitude,
-      longitude: coords?.longitude,
-    },
-    // 👇 ADICIONE ISSO para forçar o Prisma a devolver tudo
-    select: {
-      id: true,
-      name: true,
-      imageUrl: true,
-      latitude: true,
-      longitude: true,
-      tripId: true,
-      order: true
-    }
-  });
-
-  // Emite via Socket para todo mundo ver a foto nova na hora!
-  io.to(tripId).emit('destination_added', newDestination);
-  
-  res.json(newDestination);
-});
-
-app.delete('/destinations/:id', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const deleted = await prisma.destination.delete({
-      where: { id }
-    });
-
-    // Avisa todo mundo via Socket que esse destino sumiu
-    io.to(deleted.tripId).emit('destination_deleted', id);
-    
-    res.status(204).send();
-  } catch (error) {
-    res.status(500).json({ error: "Erro ao deletar destino" });
-  }
-});
-
-app.post('/destinations/:destinationId/activities', async (req, res) => {
-  const { title, type, startTime, cost, notes } = req.body;
-  const { destinationId } = req.params;
-
-  try {
-    const newActivity = await prisma.activity.create({
-      data: {
-        title,
-        type,
-        startTime: startTime ? new Date(startTime) : null,
-        cost: Number(cost) || 0,
-        notes,
-        destinationId
-      }
-    });
-
-    // Buscamos o destino para saber o tripId e avisar via Socket
-    const dest = await prisma.destination.findUnique({ 
-      where: { id: destinationId },
-      select: { tripId: true }
-    });
-
-    if (dest) {
-      io.to(dest.tripId).emit('activity_added', { activity: newActivity });
-    }
-
-    res.json(newActivity);
-  } catch (error) {
-    res.status(500).json({ error: "Erro ao criar atividade" });
-  }
-});
-
-app.delete('/activities/:id', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    // Apaga a atividade no banco de dados usando o ID
-    await prisma.activity.delete({
-      where: { id }
-    });
-
-    // Retorna status 204 (No Content), que significa "Deu tudo certo e não tenho nada a retornar"
-    res.status(204).send();
-  } catch (error) {
-    console.error("Erro ao deletar atividade:", error);
-    res.status(500).json({ error: "Erro ao deletar a atividade" });
-  }
-});
-
-app.delete('/trips/:id', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    // Apaga a viagem (se você configurou onDelete: Cascade no Prisma, 
-    // ele já vai apagar os destinos e atividades dentro dela automaticamente!)
-    await prisma.trip.delete({
-      where: { id }
-    });
-
-    res.status(204).send();
-  } catch (error) {
-    console.error("Erro ao deletar viagem:", error);
-    res.status(500).json({ error: "Erro ao deletar a viagem" });
-  }
-});
-
-const server = http.createServer(app);
-
-const io = new Server(server, {
-    cors: { origin: '*', methods: ['GET', 'POST'] }
-});
+app.use('/trips', tripRoutes);
+app.use('/destinations', destinationRoutes);
+app.use('/activities', activityRoutes(io));
 
 io.use(async (socket, next) => {
+  // O frontend vai enviar o token por aqui
+  const token = socket.handshake.auth.token; 
+
+  if (!token) {
+    return next(new Error("Autenticação necessária para o Socket"));
+  }
+
   try {
-    const token = socket.handshake.auth.token;
+    // Validamos o token usando a chave secreta
+    const decoded = await verifyToken(token, {
+      secretKey: process.env.CLERK_SECRET_KEY as string
+    } as any);
     
-    if (!token) {
-      return next(new Error("Não autorizado"));
-    }
-
-    // O Clerk verifica o token e devolve os dados (payload)
-    const tokenData = await clerk.verifyToken(token);
-    
-    (socket as any).userId = tokenData.sub; 
-
+    // Injetamos o ID do usuário no socket!
+    (socket as any).userId = decoded.sub; 
     next();
-  } catch (err) {
-    next(new Error("Token inválido"));
+  } catch (error) {
+    return next(new Error("Token de Socket inválido ou expirado"));
   }
 });
 
@@ -300,10 +65,11 @@ io.on('connection', (socket) => {
         }
         try {
             const trip = await prisma.trip.findUnique({ where: { id: tripId } });
-            
             if (trip && trip.ownerId === (socket as any).userId) { 
                 socket.join(tripId);
                 console.log(`🔒 Utilizador autorizado na sala: ${tripId}`);
+            } else {
+                console.log(`❌ Viagem ${tripId} não encontrada no banco.`);
             }
             } catch (error) {
                 console.error("Erro ao buscar viagem no socket:", error);

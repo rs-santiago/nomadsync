@@ -52,7 +52,6 @@ function App() {
 
       if (response.ok) {
         const tripData = await response.json();
-        console.log("📦 DADOS QUE CHEGARAM DO BANCO:", tripData);
         // O backend retorna tudo aninhado, então separamos para o formato do nosso Zustand
         const loadedDestinations: any[] = [];
         const loadedActivities: any[] = [];
@@ -106,44 +105,50 @@ function App() {
 
     setupSocket();
 
-    function onConnect() {
-      setIsConnected(true);
-      socket.emit('joinTripPlanning', activeTripId);
-    }
+    // function onConnect() {
+    //   setIsConnected(true);
+    //   socket.emit('joinTripPlanning', activeTripId);
+    // }
 
     function onDisconnect() {
       setIsConnected(false);
     }
 
-    // Liga os ouvintes
-    socket.on('connect', onConnect);
+    const handlePresence = (users: any) => setOnlineUsers(users);
+    const handleUpdateMap = (data: any) => syncRemoteDestination({ ...data });
+    const handleDestRemoved = (data: any) => syncRemoveDestination(data.destinationId);
+    const handleActAdded = (data: any) => syncRemoteActivity(data.activity);
+    const handleActRemoved = (data: any) => syncRemoveActivity(data.activityId);
+    const handleReordered = (data: any) => reorderDestinations(data.startIndex, data.endIndex);
+
+    // 2. LIGAMOS os ouvintes
     socket.on('disconnect', onDisconnect);
-    socket.on('presenceUpdate', setOnlineUsers);
-    socket.on('updateTripMap', (data) => syncRemoteDestination({ ...data }));
-    socket.on('destinationRemoved', (data) => syncRemoveDestination(data.destinationId));
-    socket.on('activityAdded', (data) => syncRemoteActivity(data.activity));
-    socket.on('activityRemoved', (data) => syncRemoveActivity(data.activityId));
-    socket.on('destinationsReordered', (data) => reorderDestinations(data.startIndex, data.endIndex));
+    socket.on('presenceUpdate', handlePresence);
+    socket.on('updateTripMap', handleUpdateMap);
+    socket.on('destinationRemoved', handleDestRemoved);
+    socket.on('activityAdded', handleActAdded);
+    socket.on('activityRemoved', handleActRemoved);
+    socket.on('destinationsReordered', handleReordered);
 
     return () => {
-      // Limpa tudo quando sai da viagem
-      socket.off('connect', onConnect);
+      // 3. DESLIGAMOS os ouvintes cirurgicamente quando sair da viagem
       socket.off('disconnect', onDisconnect);
-      socket.off('presenceUpdate');
-      socket.off('updateTripMap');
-      socket.off('destinationRemoved');
-      socket.off('activityAdded');
-      socket.off('activityRemoved');
-      socket.off('destinationsReordered');
+      socket.off('presenceUpdate', handlePresence);
+      socket.off('updateTripMap', handleUpdateMap);
+      socket.off('destinationRemoved', handleDestRemoved);
+      socket.off('activityAdded', handleActAdded);
+      socket.off('activityRemoved', handleActRemoved);
+      socket.off('destinationsReordered', handleReordered);
+      
       socket.disconnect();
     };
   }, [activeTripId, getToken, syncRemoteDestination, syncRemoveDestination, syncRemoteActivity, syncRemoveActivity, reorderDestinations]);
 
-  useEffect(() => {
-    if (isConnected && activeTripId) {
-      socket.emit('joinTripPlanning', activeTripId);
-    }
-  }, [activeTripId, isConnected]);
+  // useEffect(() => {
+  //   if (isConnected && activeTripId) {
+  //     socket.emit('joinTripPlanning', activeTripId);
+  //   }
+  // }, [activeTripId, isConnected]);
 
   useEffect(() => {
     const checkInvite = async () => {

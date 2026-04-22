@@ -4,6 +4,7 @@ export interface Destination {
   id: string;
   name: string;
   imageUrl?: string | null;
+  tripId?: string | null;
   latitude: number | null;
   longitude: number | null;
 }
@@ -92,8 +93,16 @@ export const useTripStore = create<TripState>((set) => ({
   addLocalActivity: (act) =>
     set((state) => ({ activities: [...state.activities, act] })),
     
-  syncRemoteActivity: (act) =>
-    set((state) => ({ activities: [...state.activities, act] })),
+  syncRemoteActivity: (newActivity) => set((state) => {
+    // 🛡️ TRAVA DE SEGURANÇA: Se o ID já existe na tela, ignora e não duplica!
+    const activityExists = state.activities.some((a) => a.id === newActivity.id);
+    if (activityExists) {
+      return state; 
+    }
+
+    // Se é nova, adiciona no final da lista
+    return { activities: [...state.activities, newActivity] };
+  }),
 
   removeLocalActivity: (id) =>
     set((state) => ({ activities: state.activities.filter(act => act.id !== id) })),

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, Trash2, ChevronDown, ChevronUp, Plane, Bed, Utensils, Landmark, Plus, GripVertical } from 'lucide-react';
 import { useTripStore } from '../store/useTripStore';
 import type { ActivityType } from '../store/useTripStore';
@@ -17,12 +17,43 @@ export function DestinationList({ tripId }: DestinationListProps) {
   const { destinations, activities, removeLocalDestination, addLocalActivity, removeLocalActivity, reorderDestinations } = useTripStore();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const setFocusedDestination = useTripStore((state) => state.setFocusedDestination);
-  const setActiveTrip = useTripStore((state) => state.setActiveTrip);
   const [newActivityTitle, setNewActivityTitle] = useState('');
   const [newActivityType, setNewActivityType] = useState<ActivityType>('other');
   const [isSubmittingActivity, setIsSubmittingActivity] = useState(false);
   
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
+
+  useEffect(() => {
+    // Só tenta conectar se o Clerk já carregou, se o usuário tá logado e se temos a viagem
+    if (!isLoaded || !isSignedIn || !tripId) return;
+
+    const iniciarConexaoSegura = async () => {
+      try {
+        const token = await getToken();
+        socket.auth = { token };
+        socket.connect();
+      } catch (error) {
+        console.error("Erro ao autenticar o socket:", error);
+      }
+    };
+
+    // Criamos uma função separada para ouvir quando o socket ESTIVER pronto
+    const handleConnect = () => {
+      socket.emit('joinTripPlanning', tripId);
+    };
+
+    // Mandamos o socket avisar quando conectar
+    socket.on('connect', handleConnect);
+
+    // Damos o play na conexão
+    iniciarConexaoSegura();
+
+    // 🧹 Limpeza blindada: removemos o "ouvinte" antes de desconectar
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.disconnect();
+    };
+  }, [isLoaded, isSignedIn, tripId]);
 
   // Função disparada quando você solta o item
   const onDragEnd = (result: DropResult) => {
@@ -83,7 +114,7 @@ export function DestinationList({ tripId }: DestinationListProps) {
   };
 
   // Funções de Ação (Atividades)
-  const handleAddActivity = async (destId: string, e: React.FormEvent) => {
+  const handleAddActivity = async (destId: string, tripId: string, e: React.FormEvent) => {
     e.preventDefault();
     if (!newActivityTitle.trim() || isSubmittingActivity) return;
 
@@ -92,7 +123,7 @@ export function DestinationList({ tripId }: DestinationListProps) {
     try {
       const token = await getToken();
       // Salva no Banco de Dados REAL
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/destinations/${destId}/activities`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/activities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -101,6 +132,8 @@ export function DestinationList({ tripId }: DestinationListProps) {
         body: JSON.stringify({
           title: newActivityTitle,
           type: newActivityType,
+          destinationId: destId,
+          tripId: tripId,
           cost: 0
         })
       });
@@ -111,9 +144,9 @@ export function DestinationList({ tripId }: DestinationListProps) {
 
       // Atualiza a tela com o dado que veio do banco (com ID verdadeiro)
       addLocalActivity(savedActivity);
-      
+
       // Emite via Socket para outros usuários
-      socket.emit('addActivity', { tripId: tripId, activity: savedActivity });
+      // socket.emit('addActivity', { tripId: tripId, activity: savedActivity });
 
       // Limpa os campos
       setNewActivityTitle('');
@@ -243,7 +276,7 @@ export function DestinationList({ tripId }: DestinationListProps) {
                             )}
 
                             {/* Formulário para adicionar nova Atividade */}
-                            <form onSubmit={(e) => handleAddActivity(dest.id, e)} className="flex gap-2">
+                            <form onSubmit={(e) => handleAddActivity(dest.id, dest.tripId || '', e)} className="flex gap-2">
                               <select
                                 value={newActivityType}
                                 onChange={(e) => setNewActivityType(e.target.value as ActivityType)}

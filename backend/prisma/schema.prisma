@@ -40,6 +40,9 @@ model Destination {
   longitude Float?
   order     Int        @default(0)
 
+  startDate   DateTime? 
+  endDate     DateTime?
+
   activities Activity[]
 
   trip       Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)

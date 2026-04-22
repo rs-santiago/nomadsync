@@ -27,13 +27,18 @@ export function AddDestinationForm({ tripId }: AddDestinationFormProps) {
       const token = await getToken();
 
       // 2. Faz o POST para a nossa rota no Backend (que busca a foto e salva no BD)
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/trips/${tripId}/destinations`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/destinations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ name: newDestination })
+        body: JSON.stringify({ 
+          name: newDestination,
+          tripId: tripId,
+          startDate: null, 
+          endDate: null // Por enquanto, criamos a parada sem datas. Depois o usuário pode editar e colocar as datas que quiser!
+         })
       });
 
       if (!response.ok) {
