@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { Map, Plus, Calendar, ArrowRight, Loader2, X, MoreHorizontal, MapPin, Trash2 } from 'lucide-react';
+import { Map, Plus, Calendar, Loader2, X, MoreHorizontal, MapPin, Trash2 } from 'lucide-react';
 
 // O formato da viagem que o nosso backend retorna
 interface TripOverview {

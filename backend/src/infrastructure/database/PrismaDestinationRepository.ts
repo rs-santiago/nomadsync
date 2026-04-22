@@ -8,8 +8,8 @@ export class PrismaDestinationRepository implements IDestinationRepository {
     return await prisma.destination.create({
       data: {
         name: data.name,
-        startDate: data.startDate,
-        endDate: data.endDate,
+        startDate: data.startDate ?? null,
+        endDate: data.endDate ?? null,
         tripId: data.tripId
       }
     });
