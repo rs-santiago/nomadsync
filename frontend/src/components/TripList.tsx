@@ -113,7 +113,7 @@ export function TripList({ onSelectTrip }: TripListProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Minhas Viagens</h2>
           <p className="text-slate-500">Selecione um roteiro ou crie um novo</p>
@@ -128,7 +128,7 @@ export function TripList({ onSelectTrip }: TripListProps) {
             Nova Viagem
           </button>
         ) : (
-          <form onSubmit={handleCreateNewTrip} className="flex items-center gap-2">
+          <form onSubmit={handleCreateNewTrip} className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
             <input
               type="text"
               autoFocus
