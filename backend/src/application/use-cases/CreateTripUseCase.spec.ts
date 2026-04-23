@@ -52,7 +52,7 @@ describe('CreateTripUseCase', () => {
       ownerId: 'user-456'
     }));
 
-    expect(result).toHaveProperty('batata', 'trip-123');
+    expect(result).toHaveProperty('id', 'trip-123');
   });
 
   // 👇 TESTE 2: Caminho Feliz Parcial (Sem datas)
