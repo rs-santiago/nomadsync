@@ -32,7 +32,6 @@ function App() {
   useEffect(() => {
     async function loadTripData() {
       if (!activeTripId) {
-        console.log("🛑 Cancelou o fetch porque o activeTripId é nulo (Estamos no Dashboard).");
         return;
       }
       setIsLoading(true); // Liga o loading AQUI

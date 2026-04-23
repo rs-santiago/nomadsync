@@ -21,8 +21,6 @@ export class MapboxLocationService implements ILocationService {
         // O Mapbox retorna um array 'center' no formato [longitude, latitude]
         const [longitude, latitude] = data.features[0].center;
         
-        console.log(`📍 [MAPBOX] Coordenadas de ${address}: [${latitude}, ${longitude}]`);
-        
         return { latitude, longitude };
         }
 

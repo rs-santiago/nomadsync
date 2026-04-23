@@ -87,20 +87,14 @@ const activeUsers = new Map<string, { id: string, name: string, color: string }[
 const avatarColors = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#16a34a', '#d97706', '#059669', '#9333ea', '#dc2626', '#2563eb'];
 
 io.on('connection', (socket) => {
-  console.log(`🔌 Novo viajante conectado: ${socket.id}`);
-
   socket.on('joinTripPlanning', async (tripId: string) => {
     if (!tripId) {
-      console.log('⚠️ Tentativa de entrar em sala sem ID da viagem.');
       return;
     }
     try {
       const trip = await prisma.trip.findUnique({ where: { id: tripId } });
       if (trip && trip.ownerId === (socket as any).userId) {
         socket.join(tripId);
-        console.log(`🔒 Utilizador autorizado na sala: ${tripId}`);
-      } else {
-        console.log(`❌ Viagem ${tripId} não encontrada no banco.`);
       }
     } catch (error) {
       console.error("Erro ao buscar viagem no socket:", error);
@@ -196,7 +190,6 @@ io.on('connection', (socket) => {
       activeUsers.set(tripId, filtered);
       io.to(tripId).emit('presenceUpdate', filtered);
     });
-    console.log(`❌ Viajante desconectado: ${socket.id}`);
   });
 });
 
