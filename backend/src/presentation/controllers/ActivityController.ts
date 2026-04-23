@@ -16,8 +16,6 @@ export class ActivityController {
       const activity = await this.createUseCase.execute({ title, type, destinationId });
 
       if (tripId) {
-        console.log(`🔈 Emitindo evento 'activityAdded' para tripId ${tripId}`);
-        // Agora o 'this.io' nunca mais será undefined!
         this.io.to(tripId).emit('activityAdded', { tripId, activity }); 
       }
 
