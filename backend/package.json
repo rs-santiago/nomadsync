@@ -8,7 +8,7 @@
     "start": "node dist/server.js",
     "test": "vitest",
     "test:ci": "vitest run",
-    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production') { process.exit(0); } process.exit(1)\" || husky"
+    "prepare": "test -d .git && husky || true"
   },
   "keywords": [],
   "author": "",
