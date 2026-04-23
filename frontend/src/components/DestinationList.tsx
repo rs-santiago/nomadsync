@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Trash2, ChevronDown, ChevronUp, Plane, Bed, Utensils, Landmark, Plus, GripVertical } from 'lucide-react';
+import { MapPin, Trash2, ChevronDown, ChevronUp, Plane, Bed, Utensils, Landmark, Plus, GripVertical, Sparkles } from 'lucide-react';
 import { useTripStore } from '../store/useTripStore';
 import type { ActivityType } from '../store/useTripStore';
 import { socket } from '../lib/socket';
@@ -7,6 +7,7 @@ import { socket } from '../lib/socket';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { useAuth } from '@clerk/clerk-react';
+import { AIGeneratorButton } from './AIGeneratorButton';
 
 interface DestinationListProps {
   tripId: string;
@@ -20,7 +21,7 @@ export function DestinationList({ tripId }: DestinationListProps) {
   const [newActivityTitle, setNewActivityTitle] = useState('');
   const [newActivityType, setNewActivityType] = useState<ActivityType>('other');
   const [isSubmittingActivity, setIsSubmittingActivity] = useState(false);
-  
+
   const { getToken, isLoaded, isSignedIn } = useAuth();
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export function DestinationList({ tripId }: DestinationListProps) {
   // Função disparada quando você solta o item
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
-    
+
     const startIndex = result.source.index;
     const endIndex = result.destination.index;
 
@@ -77,7 +78,7 @@ export function DestinationList({ tripId }: DestinationListProps) {
   };
 
   const handleFocus = (dest: any) => {
-    toggleExpand(dest.id); 
+    toggleExpand(dest.id);
     if (!dest.latitude || !dest.longitude) {
       return;
     }
@@ -96,8 +97,8 @@ export function DestinationList({ tripId }: DestinationListProps) {
 
   // Funções de Ação (Destinos)
   const handleDeleteDestination = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); 
-    
+    e.stopPropagation();
+
     if (!confirm("Tem certeza que deseja remover este destino?")) return;
 
     try {
@@ -107,7 +108,7 @@ export function DestinationList({ tripId }: DestinationListProps) {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      removeLocalDestination(id); 
+      removeLocalDestination(id);
     } catch (error) {
       console.error("Erro ao deletar:", error);
     }
@@ -218,9 +219,9 @@ export function DestinationList({ tripId }: DestinationListProps) {
                             {/* Foto do Unsplash */}
                             <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-slate-100 flex items-center justify-center border border-slate-200">
                               {dest.imageUrl ? (
-                                <img 
-                                  src={dest.imageUrl} 
-                                  alt={dest.name} 
+                                <img
+                                  src={dest.imageUrl}
+                                  alt={dest.name}
                                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                 />
                               ) : (
@@ -253,7 +254,7 @@ export function DestinationList({ tripId }: DestinationListProps) {
                         {/* ACORDEÃO DAS ATIVIDADES */}
                         {isExpanded && (
                           <div className="p-4 bg-slate-50 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
-                            
+
                             {/* Lista de Atividades Atuais */}
                             {destActivities.length > 0 ? (
                               <ul className="space-y-2 mb-4">
@@ -264,6 +265,13 @@ export function DestinationList({ tripId }: DestinationListProps) {
                                         {getActivityIcon(act.type)}
                                       </div>
                                       <span className="text-slate-700 font-medium text-sm">{act.title}</span>
+                                      {/* 🤖 A TAG VISUAL DA IA */}
+                                      {act.isAiGenerated && (
+                                        <span className="flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-full">
+                                          <Sparkles size={10} />
+                                          IA
+                                        </span>
+                                      )}
                                     </div>
                                     <button onClick={() => handleDeleteActivity(act.id)} className="text-slate-300 hover:text-red-500 transition-colors p-1">
                                       <Trash2 size={16} />
@@ -274,6 +282,13 @@ export function DestinationList({ tripId }: DestinationListProps) {
                             ) : (
                               <p className="text-sm text-slate-400 italic mb-4 text-center">Nenhuma atividade planejada.</p>
                             )}
+                            <div className="mb-4 flex justify-center">
+                              <AIGeneratorButton
+                                tripId={tripId}
+                                destinationId={dest.id}
+                                destinationName={dest.name}
+                              />
+                            </div>
 
                             {/* Formulário para adicionar nova Atividade */}
                             <form onSubmit={(e) => handleAddActivity(dest.id, dest.tripId || '', e)} className="flex gap-2">
@@ -297,8 +312,8 @@ export function DestinationList({ tripId }: DestinationListProps) {
                                 disabled={isSubmittingActivity}
                                 className="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-blue-400 disabled:bg-slate-100"
                               />
-                              <button 
-                                type="submit" 
+                              <button
+                                type="submit"
                                 disabled={isSubmittingActivity || !newActivityTitle.trim()}
                                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center disabled:opacity-50 transition-colors"
                               >

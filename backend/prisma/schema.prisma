@@ -55,7 +55,10 @@ model Destination {
 model Activity {
   id            String      @id @default(uuid())
   title         String
+  category      String?
+  description   String?
   type          String      // 'flight', 'hotel', 'restaurant', 'museum', etc.
+  isAiGenerated Boolean @default(false)
   startTime     DateTime?   // Para sabermos que horas começa
   cost          Float?      @default(0)
   notes         String?

@@ -1,14 +1,17 @@
 import { PrismaClient } from '@prisma/client';
 import { ITripRepository, CreateTripData } from '../../domain/repositories/ITripRepository';
 
-const prisma = new PrismaClient();
-
 export class PrismaTripRepository implements ITripRepository {
+  
+  // ✅ ADICIONADO: Injeção de Dependência pelo Construtor
+  constructor(private prisma: PrismaClient) {}
+
   async create(data: CreateTripData) {
-    return await prisma.trip.create({
+    // ⚠️ ATENÇÃO: Mudamos de 'prisma.trip...' para 'this.prisma.trip...' em todos os métodos!
+    return await this.prisma.trip.create({
       data: {
         title: data.title,
-        startDate: data.startDate ?? null,
+        startDate: data.startDate ?? null, // Proteção contra nullish já estava aqui, ótimo!
         endDate: data.endDate ?? null,
         imageUrl: data.imageUrl ?? null,
         ownerId: data.ownerId
@@ -17,7 +20,7 @@ export class PrismaTripRepository implements ITripRepository {
   }
 
   async findAll(ownerId: string) {
-    return await prisma.trip.findMany({
+    return await this.prisma.trip.findMany({
       where: {
         OR: [
           { ownerId }, // Viagens onde o usuário é o dono
@@ -25,31 +28,29 @@ export class PrismaTripRepository implements ITripRepository {
         ]
       },
       include: {
-        // Ele diz ao Prisma para fazer o "JOIN" e trazer os destinos
         destinations: {
             include: {
-            activities: true // Se quiseres trazer as atividades dos destinos também!
+            activities: true
             }
         }
       },
-      orderBy: { createdAt: 'desc' } // Traz as mais novas primeiro
+      orderBy: { createdAt: 'desc' }
     });
   }
 
   async delete(id: string) {
-    await prisma.trip.delete({
+    await this.prisma.trip.delete({
       where: { id }
     });
   }
 
     async findById(id: string) {
-      return await prisma.trip.findUnique({
+      return await this.prisma.trip.findUnique({
         where: { id },
         include: {
-        // Ele diz ao Prisma para fazer o "JOIN" e trazer os destinos
         destinations: {
           include: {
-            activities: true // Se quiseres trazer as atividades dos destinos também!
+            activities: true 
           }
         }
       },
@@ -57,14 +58,12 @@ export class PrismaTripRepository implements ITripRepository {
     }
 
     async addParticipant(tripId: string, userId: string) {
-        // 1. Busca a viagem
         const trip = await this.findById(tripId);
         if (!trip) {
             throw new Error("Viagem não encontrada.");
         }
 
-        // 2. Adiciona o participante
-        await prisma.trip.update({
+        await this.prisma.trip.update({
             where: { id: tripId },
             data: {
                 participants: {
@@ -72,6 +71,5 @@ export class PrismaTripRepository implements ITripRepository {
                 }
             }
         });
-
     }
 }

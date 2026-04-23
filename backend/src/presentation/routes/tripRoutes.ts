@@ -8,11 +8,12 @@ import { PrismaTripRepository } from '../../infrastructure/database/PrismaTripRe
 import { GetTripsUseCase } from '../../application/use-cases/GetTripsUseCase';
 import { JoinTripUseCase } from '../../application/use-cases/JoinTripUseCase';
 import { UnsplashPhotoService } from '../../infrastructure/services/UnsplashPhotoService';
+import { prisma } from '../../lib/prisma';
 
 const tripRoutes = Router();
 
 // 1. Instanciamos os operários
-const tripRepository = new PrismaTripRepository();
+const tripRepository = new PrismaTripRepository(prisma);
 const photoService = new UnsplashPhotoService();
 
 // 2. Instanciamos os cérebros (Casos de Uso)

@@ -1,21 +1,26 @@
 import { PrismaClient } from '@prisma/client';
 import { IActivityRepository, CreateActivityData } from '../../domain/repositories/IActivityRepository';
 
-const prisma = new PrismaClient();
-
 export class PrismaActivityRepository implements IActivityRepository {
+  
+  constructor(private prisma: PrismaClient) {}
+
   async create(data: CreateActivityData) {
-    return await prisma.activity.create({
+    return await this.prisma.activity.create({
       data: {
         title: data.title,
         type: data.type,
-        destinationId: data.destinationId
+        destinationId: data.destinationId,
+        // 👇 A MÁGICA AQUI: Se for undefined, passamos null para o Prisma ficar feliz
+        category: data.category ?? null,          
+        description: data.description ?? null,    
+        isAiGenerated: data.isAiGenerated ?? false 
       }
     });
   }
 
   async delete(id: string) {
-    await prisma.activity.delete({
+    await this.prisma.activity.delete({
       where: { id }
     });
   }

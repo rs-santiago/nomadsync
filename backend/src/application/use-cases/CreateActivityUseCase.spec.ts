@@ -2,6 +2,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CreateActivityUseCase } from './CreateActivityUseCase';
+import { CreateActivityData } from '../../domain/repositories/IActivityRepository';
 
 describe('CreateActivityUseCase', () => {
   // 1. Variáveis para o Dublê e para o Use Case
@@ -25,10 +26,11 @@ describe('CreateActivityUseCase', () => {
 
   // 👇 TESTE 1: Caminho Feliz
   it('deve criar uma atividade com sucesso', async () => {
-    const input = {
+    const input: CreateActivityData = {
       title: 'Visita ao Museu do Louvre',
       type: 'museum',
-      destinationId: 'dest-456'
+      destinationId: 'dest-456',
+      category: 'cultural',
     };
 
     const result = await useCase.execute(input);
@@ -44,10 +46,11 @@ describe('CreateActivityUseCase', () => {
 
   // 👇 TESTE 2: Regra de Negócio (Título obrigatório)
   it('deve lançar um erro se o título da atividade não for fornecido', async () => {
-    const input = {
+    const input: CreateActivityData = {
       title: '', // Título vazio
       type: 'museum',
-      destinationId: 'dest-456'
+      destinationId: 'dest-456',
+      category: 'cultural',
     };
 
     // Verifica se a exceção é lançada com a mensagem exata
@@ -59,10 +62,11 @@ describe('CreateActivityUseCase', () => {
 
   // 👇 TESTE 3: Regra de Negócio (Destino obrigatório)
   it('deve lançar um erro se o ID do destino não for fornecido', async () => {
-    const input = {
+    const input: CreateActivityData = {
       title: 'Visita ao Museu do Louvre',
       type: 'museum',
-      destinationId: '' // Sem destino associado
+      destinationId: '', // Sem destino associado
+      category: 'cultural',
     };
 
     // Verifica se a exceção é lançada com a mensagem exata

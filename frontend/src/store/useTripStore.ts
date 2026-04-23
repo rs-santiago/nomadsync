@@ -13,6 +13,7 @@ export type ActivityType = 'flight' | 'hotel' | 'restaurant' | 'museum' | 'other
 
 export interface Activity {
   id: string;
+  isAiGenerated: boolean;
   destinationId: string;
   title: string;
   type: ActivityType;

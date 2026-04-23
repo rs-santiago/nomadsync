@@ -10,7 +10,8 @@ export class Activity {
     public type: ActivityType,
     public cost: number, // Para o cálculo de orçamento
     public currency: string,
-    public scheduledFor: Date
+    public scheduledFor: Date,
+    public isAiGenerated: boolean
   ) {}
 
   updateCost(newCost: number, newCurrency: string): void {

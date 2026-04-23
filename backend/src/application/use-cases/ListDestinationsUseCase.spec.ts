@@ -11,7 +11,7 @@ describe('ListDestinationsUseCase', () => {
     // Preparamos o dublê (mock) do repositório
     mockDestinationRepository = {
       // Simulamos o banco retornando um array de destinos
-      findByTripId: vi.fn().mockResolvedValue([
+      findByTripIdOrdered: vi.fn().mockResolvedValue([
         { id: 'dest-1', name: 'Paris', tripId: 'trip-123' },
         { id: 'dest-2', name: 'Londres', tripId: 'trip-123' }
       ])
@@ -27,8 +27,8 @@ describe('ListDestinationsUseCase', () => {
     const result = await useCase.execute(tripId);
 
     // Verifica se o repositório foi chamado corretamente com o ID da viagem
-    expect(mockDestinationRepository.findByTripId).toHaveBeenCalledWith(tripId);
-    expect(mockDestinationRepository.findByTripId).toHaveBeenCalledTimes(1);
+    expect(mockDestinationRepository.findByTripIdOrdered).toHaveBeenCalledWith(tripId);
+    expect(mockDestinationRepository.findByTripIdOrdered).toHaveBeenCalledTimes(1);
 
     // Verifica se retornou um array e se tem os dados certos
     expect(Array.isArray(result)).toBe(true);
@@ -44,7 +44,7 @@ describe('ListDestinationsUseCase', () => {
     await expect(useCase.execute(tripId)).rejects.toThrow("O ID da viagem é obrigatório para listar destinos.");
     
     // Garante que o banco nunca foi consultado
-    expect(mockDestinationRepository.findByTripId).not.toHaveBeenCalled();
+    expect(mockDestinationRepository.findByTripIdOrdered).not.toHaveBeenCalled();
   });
 
   // 👇 TESTE 3: Regra de Negócio (Viagem sem destinos)
@@ -52,12 +52,12 @@ describe('ListDestinationsUseCase', () => {
     const tripId = 'trip-nova';
 
     // Simulamos o Prisma não encontrando nada (retorna array vazio)
-    mockDestinationRepository.findByTripId.mockResolvedValue([]);
+    mockDestinationRepository.findByTripIdOrdered.mockResolvedValue([]);
 
     const result = await useCase.execute(tripId);
 
     // Verifica se o Use Case lidou bem com a falta de dados e repassou o array vazio
-    expect(mockDestinationRepository.findByTripId).toHaveBeenCalledWith(tripId);
+    expect(mockDestinationRepository.findByTripIdOrdered).toHaveBeenCalledWith(tripId);
     expect(Array.isArray(result)).toBe(true);
     expect(result).toHaveLength(0); // Garante que a lista está vazia
   });

@@ -1,37 +1,56 @@
 import { PrismaClient } from '@prisma/client';
-import { IDestinationRepository, CreateDestinationData } from '../../domain/repositories/IDestinationRepository';
-
-const prisma = new PrismaClient();
+import { IDestinationRepository } from '../../domain/repositories/IDestinationRepository';
 
 export class PrismaDestinationRepository implements IDestinationRepository {
-  async create(data: CreateDestinationData) {
-    return await prisma.destination.create({
+  
+  // 1. Recebemos a conexão pelo construtor (Injeção de Dependência)
+  constructor(private prisma: PrismaClient) {}
+
+  async countByTripId(tripId: string): Promise<number> {
+    // 2. Trocamos tudo para 'this.prisma'
+    return this.prisma.destination.count({ where: { tripId } });
+  }
+
+  async create(data: { 
+    id: string; 
+    name: string; 
+    tripId: string; 
+    order: number;
+    startDate?: Date | null;
+    endDate?: Date | null;
+  }) {
+    return this.prisma.destination.create({ 
       data: {
+        id: data.id,
         name: data.name,
-        startDate: data.startDate ?? null,
-        endDate: data.endDate ?? null,
         tripId: data.tripId,
-
-        latitude: data.latitude ?? null,
-        longitude: data.longitude ?? null,
-        imageUrl: data.imageUrl ?? null
-      }
+        order: data.order,
+        // Proteção contra undefined (Strict Null Checks)
+        startDate: data.startDate ?? null,
+        endDate: data.endDate ?? null
+      } 
     });
   }
 
-  async findByTripId(tripId: string) {
-    return await prisma.destination.findMany({
+  async findByTripIdOrdered(tripId: string) {
+    return this.prisma.destination.findMany({
       where: { tripId },
-      orderBy: { createdAt: 'asc' }, // Ordena pela data mais próxima primeiro
-      include: {
-        activities: true // Já traz as atividades embutidas para o frontend!
-      }
+      orderBy: { order: 'asc' }
     });
   }
 
-  async delete(id: string) {
-    await prisma.destination.delete({
-      where: { id }
-    });
+  async updateOrderTransaction(destinations: { id: string; order: number }[]) {
+    await this.prisma.$transaction(
+      destinations.map(dest =>
+        this.prisma.destination.update({
+          where: { id: dest.id },
+          data: { order: dest.order }
+        })
+      )
+    );
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.destination.delete({ where: { id } });
   }
 }

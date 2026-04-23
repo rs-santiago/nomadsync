@@ -6,11 +6,12 @@ import { DeleteDestinationUseCase } from '../../application/use-cases/DeleteDest
 import { DestinationController } from '../controllers/DestinationController';
 import { MapboxLocationService } from '../../infrastructure/services/MapboxLocationService';
 import { UnsplashPhotoService } from '../../infrastructure/services/UnsplashPhotoService';
+import { prisma } from '../../lib/prisma';
 
 const destinationRoutes = Router();
 
 // 1. Instanciamos o banco
-const destinationRepository = new PrismaDestinationRepository();
+const destinationRepository = new PrismaDestinationRepository(prisma);
 // Instancia os novos serviços
 const locationService = new MapboxLocationService();
 const photoService = new UnsplashPhotoService();
