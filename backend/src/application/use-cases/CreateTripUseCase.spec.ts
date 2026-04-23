@@ -50,7 +50,7 @@ describe('CreateTripUseCase', () => {
       endDate: new Date('2026-05-25'),   // Verifica se virou objeto Date!
       imageUrl: 'https://unsplash.com/foto-japao.jpg',
       ownerId: 'user-456'
-    })); 
+    }));
 
     expect(result).toHaveProperty('batata', 'trip-123');
   });
