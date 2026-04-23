@@ -8,7 +8,7 @@
     "start": "node dist/server.js",
     "test": "vitest",
     "test:ci": "vitest run",
-    "prepare": "if [ \"$NODE_ENV\" != \"production\" ]; then husky; fi"
+    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production') { process.exit(0); } process.exit(1)\" || husky"
   },
   "keywords": [],
   "author": "",

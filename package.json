@@ -16,7 +16,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "if [ \"$NODE_ENV\" != \"production\" ]; then husky; fi"
+    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production') { process.exit(0); } process.exit(1)\" || husky"
   },
   "devDependencies": {
     "@vitest/ui": "^4.1.5"
