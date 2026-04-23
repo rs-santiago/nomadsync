@@ -5,18 +5,18 @@ import { CreateTripUseCase } from '../../application/use-cases/CreateTripUseCase
 import { ListTripsUseCase } from '../../application/use-cases/ListTripsUseCase';
 import { DeleteTripUseCase } from '../../application/use-cases/DeleteTripUseCase';
 import { PrismaTripRepository } from '../../infrastructure/database/PrismaTripRepository';
-import { UnsplashImageService } from '../../infrastructure/external-apis/UnsplashImageService';
 import { GetTripsUseCase } from '../../application/use-cases/GetTripsUseCase';
 import { JoinTripUseCase } from '../../application/use-cases/JoinTripUseCase';
+import { UnsplashPhotoService } from '../../infrastructure/services/UnsplashPhotoService';
 
 const tripRoutes = Router();
 
 // 1. Instanciamos os operários
 const tripRepository = new PrismaTripRepository();
-const imageService = new UnsplashImageService();
+const photoService = new UnsplashPhotoService();
 
 // 2. Instanciamos os cérebros (Casos de Uso)
-const createTripUseCase = new CreateTripUseCase(tripRepository, imageService);
+const createTripUseCase = new CreateTripUseCase(tripRepository, photoService);
 const joinTripUseCase = new JoinTripUseCase(tripRepository);
 const listTripsUseCase = new ListTripsUseCase(tripRepository);
 const deleteTripUseCase = new DeleteTripUseCase(tripRepository);

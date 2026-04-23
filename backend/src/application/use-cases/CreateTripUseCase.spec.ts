@@ -6,7 +6,7 @@ import { CreateTripUseCase } from './CreateTripUseCase';
 describe('CreateTripUseCase', () => {
   // 1. Nossos Dublês
   let mockTripRepository: any;
-  let mockImageService: any;
+  let mockPhotoService: any;
   let useCase: CreateTripUseCase;
 
   // 2. Preparamos o terreno antes de cada teste
@@ -22,11 +22,11 @@ describe('CreateTripUseCase', () => {
       })
     };
 
-    mockImageService = {
-      getCoverImage: vi.fn().mockResolvedValue('https://unsplash.com/foto-japao.jpg')
+    mockPhotoService = {
+      getPhotoUrl: vi.fn().mockResolvedValue('https://unsplash.com/foto-japao.jpg')
     };
 
-    useCase = new CreateTripUseCase(mockTripRepository, mockImageService);
+    useCase = new CreateTripUseCase(mockTripRepository, mockPhotoService);
   });
 
   // 👇 TESTE 1: Caminho Feliz Completo (Com datas)
@@ -41,7 +41,7 @@ describe('CreateTripUseCase', () => {
     const result = await useCase.execute(input);
 
     // Verifica se o serviço de imagem foi chamado com o título da viagem
-    expect(mockImageService.getCoverImage).toHaveBeenCalledWith('Férias no Japão');
+    expect(mockPhotoService.getPhotoUrl).toHaveBeenCalledWith('Férias no Japão');
 
     // Verifica se o repositório salvou os dados formatados corretamente
     expect(mockTripRepository.create).toHaveBeenCalledWith(expect.objectContaining({
@@ -84,7 +84,7 @@ describe('CreateTripUseCase', () => {
     await expect(useCase.execute(input)).rejects.toThrow("O título da viagem é obrigatório.");
     
     // Nem a imagem nem o banco devem ter sido chamados
-    expect(mockImageService.getCoverImage).not.toHaveBeenCalled();
+    expect(mockPhotoService.getPhotoUrl).not.toHaveBeenCalled();
     expect(mockTripRepository.create).not.toHaveBeenCalled();
   });
 
@@ -102,7 +102,7 @@ describe('CreateTripUseCase', () => {
   // 👇 TESTE 5: Resiliência (Falha no serviço de Imagem)
   it('deve criar a viagem mesmo se a API de imagens falhar (retornar null)', async () => {
     // Forçamos a API de imagens a dar "ruim"
-    mockImageService.getCoverImage.mockResolvedValue(null);
+    mockPhotoService.getPhotoUrl.mockResolvedValue(null);
 
     const input = {
       title: 'Destino Secreto',

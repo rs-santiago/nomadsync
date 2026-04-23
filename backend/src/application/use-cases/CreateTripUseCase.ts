@@ -1,5 +1,5 @@
 import { ITripRepository } from '../../domain/repositories/ITripRepository';
-import { IImageService } from '../services/IImageService';
+import { IPhotoService } from '../../domain/services/IPhotoService';
 
 interface Input {
   title: string;
@@ -12,7 +12,7 @@ export class CreateTripUseCase {
   // O construtor recebe as dependências (Injeção de Dependência)
   constructor(
     private tripRepository: ITripRepository,
-    private imageService: IImageService
+    private photoService: IPhotoService
   ) {}
 
   async execute(input: Input) {
@@ -26,7 +26,7 @@ export class CreateTripUseCase {
     }
 
     // 2. Busca a foto de capa automaticamente
-    const imageUrl = await this.imageService.getCoverImage(input.title);
+    const imageUrl = await this.photoService.getPhotoUrl(input.title);
 
     // 3. Formata as datas e manda salvar
     const trip = await this.tripRepository.create({
