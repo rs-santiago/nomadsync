@@ -1,1 +1,2 @@
+cd backend
 npm run test:ci
