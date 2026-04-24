@@ -8,12 +8,16 @@ import { verifyToken } from '@clerk/clerk-sdk-node';
 // Repositórios
 import { GroqAIService } from '../../infrastructure/services/GroqAIService';
 
-// Casos de Uso
-import { GenerateTripItineraryUseCase } from '../../application/use-cases/GenerateTripItineraryUseCase';
+// Repositórios
 import { PrismaDestinationRepository } from '../../infrastructure/database/PrismaDestinationRepository';
 import { PrismaActivityRepository } from '../../infrastructure/database/PrismaActivityRepository';
+import { PrismaTripRepository } from '../../infrastructure/database/PrismaTripRepository';
+
+// Casos de Uso
+import { GenerateTripItineraryUseCase } from '../../application/use-cases/GenerateTripItineraryUseCase';
 import { AddDestinationUseCase } from '../../application/use-cases/AddDestinationUseCase';
 import { ReorderDestinationsUseCase } from '../../application/use-cases/ReorderDestinationsUseCase';
+import { GenerateTripBudgetUseCase } from '../../application/use-cases/GenerateTripBudgetUseCase';
 
 // Estado em memória para controle de presença nas salas
 const activeUsers = new Map<string, { id: string, name: string, color: string }[]>();
@@ -44,6 +48,8 @@ export function setupTripSockets(io: Server) {
     const activityRepo = new PrismaActivityRepository(prisma);
     const addDestUC = new AddDestinationUseCase(destinationRepo);
     const reorderDestUC = new ReorderDestinationsUseCase(destinationRepo);
+    const tripRepo = new PrismaTripRepository(prisma);
+    const aiBudgetUC = new GenerateTripBudgetUseCase(aiService, tripRepo);
     
     // O UseCase de IA agora recebe o serviço da Groq e o repositório de Atividades
     // ❌ O jeito que está dando erro:
@@ -140,6 +146,17 @@ export function setupTripSockets(io: Server) {
         console.error("Erro na geração por IA:", error);
         Sentry.captureException(error);
         socket.emit('error_message', 'Desculpe, a IA falhou ao gerar o roteiro. Tente novamente.');
+      }
+    });
+
+    socket.on('requestAIBudget', async (data: { tripId: string, destinationName: string, currency: string }) => {
+      try {
+        const budget = await aiBudgetUC.execute(data.tripId, data.destinationName, data.currency);
+        io.to(data.tripId).emit('budgetGeneratedByAI', budget);
+      } catch (error) {
+        console.error("Erro no orçamento por IA:", error);
+        Sentry.captureException(error);
+        socket.emit('error_message', 'A IA financeira falhou ao calcular o orçamento.');
       }
     });
 

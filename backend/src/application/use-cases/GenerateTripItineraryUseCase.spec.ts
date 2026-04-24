@@ -16,7 +16,18 @@ const mockAIService: IAIService = {
   generateActivities: vi.fn().mockResolvedValue([
     { title: 'Torre Eiffel', category: 'CULTURE', description: 'Vista incrível' },
     { title: 'Café Parisien', category: 'FOOD', description: 'Croissant clássico' }
-  ])
+  ]),
+  estimateBudget: vi.fn().mockResolvedValue({
+    currency: 'USD',
+    total: 500,
+    breakdown: {
+      food: 150,
+      transport: 100,
+      leisure: 200,
+      accommodation: 50
+    },
+    tips: 'Considere comprar um passe de transporte para economizar!'
+  })
 };
 
 describe('GenerateTripItineraryUseCase', () => {

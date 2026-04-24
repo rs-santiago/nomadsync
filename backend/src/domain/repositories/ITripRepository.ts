@@ -7,11 +7,19 @@ export interface CreateTripData {
   ownerId: string;
 }
 
+export interface TripWithRelations {
+  id: string;
+  destinations: {
+    id: string;
+    activities: any[]; 
+  }[];
+}
+
 // O contrato que qualquer banco de dados (Prisma, TypeORM, etc) deve seguir
 export interface ITripRepository {
   create(data: CreateTripData): Promise<any>;
-  findAll(ownerId: string): Promise<any[]>;
-  findById(id: string): Promise<any | null>;
+  findAll(ownerId: string): Promise<TripWithRelations[]>;
+  findById(id: string): Promise<TripWithRelations | null>;
   delete(id: string): Promise<void>;
   addParticipant(tripId: string, userId: string): Promise<void>;
 }
