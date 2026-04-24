@@ -3,7 +3,7 @@
 import { Server, Socket } from 'socket.io';
 import { prisma } from '../../lib/prisma'; // Instância do Prisma
 import * as Sentry from '@sentry/node';
-import { verifyToken } from '@clerk/clerk-sdk-node';
+import { verifyToken, clerkClient } from '@clerk/clerk-sdk-node';
 
 // Repositórios
 import { GroqAIService } from '../../infrastructure/services/GroqAIService';
@@ -63,22 +63,48 @@ export function setupTripSockets(io: Server) {
         const trip = await prisma.trip.findUnique({ where: { id: tripId } });
         const isOwner = trip?.ownerId === userId;
         const isParticipant = trip?.participants.includes(userId);
-        // Verifica se o usuário tem permissão (Aqui pode ser expandido para participants depois)
+        
+        // Verifica se o usuário tem permissão
         if (trip && (isOwner || isParticipant)) {
           socket.join(tripId);
           
           const currentUsers = activeUsers.get(tripId) || [];
+          
+          // Só adiciona se o socket ainda não estiver na lista
           if (!currentUsers.some(u => u.id === socket.id)) {
+            
+            // 👇 1. LÓGICA DO CLERK PARA BUSCAR O NOME
+            let userName = `Usuário ${userId.substring(0, 4)}`; // Fallback de segurança
+            
+            try {
+              // Bate na API do Clerk para pegar os dados do usuário
+              const clerkUser = await clerkClient.users.getUser(userId);
+              
+              // Monta o nome: Primeiro tenta "Nome Sobrenome", se não tiver, tenta o "username"
+              if (clerkUser.firstName) {
+                userName = clerkUser.firstName;
+                if (clerkUser.lastName) userName += ` ${clerkUser.lastName}`;
+              } else if (clerkUser.username) {
+                userName = clerkUser.username;
+              }
+            } catch (clerkError) {
+              console.error(`Falha ao buscar dados do usuário ${userId} no Clerk:`, clerkError);
+              // Não damos throw aqui para não impedir o usuário de entrar na sala se o Clerk falhar
+            }
+
+            // 👇 2. ADICIONA COM O NOME REAL
             currentUsers.push({
               id: socket.id,
-              name: `Usuário ${userId.substring(0, 4)}`, // Temporário: Ideal é buscar o nome no Clerk
+              name: userName, 
               color: avatarColors[Math.floor(Math.random() * avatarColors.length)] || '#8c4545'
             });
+            
             activeUsers.set(tripId, currentUsers);
             io.to(tripId).emit('presenceUpdate', currentUsers);
           }
         }
       } catch (error) {
+        console.error("Erro no joinTripPlanning:", error);
         Sentry.captureException(error);
       }
     });

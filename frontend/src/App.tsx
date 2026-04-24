@@ -17,6 +17,7 @@ function App() {
   const [onlineUsers, setOnlineUsers] = useState<{ id: string, name: string, color: string }[]>([]);
   const { getToken, isSignedIn } = useAuth();
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
+  const [tripInfo, setTripInfo] = useState<{title: string, startDate: string | null, endDate: string | null} | null>(null);
   const destinations = useTripStore((state) => state.destinations);
 
   const {
@@ -51,11 +52,16 @@ function App() {
 
       if (response.ok) {
         const tripData = await response.json();
+        setTripInfo({
+          title: tripData.title || tripData.name || "Minha Viagem", // Garante um fallback
+          startDate: tripData.startDate,
+          endDate: tripData.endDate
+        });
         // O backend retorna tudo aninhado, então separamos para o formato do nosso Zustand
         const loadedDestinations: any[] = [];
         const loadedActivities: any[] = [];
 
-        // 👇 TRAVA DE SEGURANÇA: Se tripData.destinations for undefined (viagem nova), usamos um array vazio []
+        // Se tripData.destinations for undefined (viagem nova), usamos um array vazio []
         const destinosSeguros = tripData.destinations || [];
 
         destinosSeguros.forEach((dest: any) => {
@@ -237,6 +243,7 @@ function App() {
             <button
               onClick={() => {
                 setActiveTripId(null);
+                setTripInfo(null);
                 socket.disconnect();
                 setInitialData([], []);
                 // DICA: Remova o ID da URL se estiver usando rotas para limpar o estado
@@ -250,7 +257,14 @@ function App() {
               O botão de "Convidar" que adicionamos dentro dele vai 
               usar a URL atual para gerar o link automaticamente.
           */}
-            <Header isConnected={isConnected} onlineUsers={onlineUsers} tripId={activeTripId} />
+            <Header 
+              isConnected={isConnected}
+              onlineUsers={onlineUsers}
+              tripId={activeTripId}
+              tripName={tripInfo?.title}
+              startDate={tripInfo?.startDate}
+              endDate={tripInfo?.endDate} 
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
   
