@@ -18,6 +18,7 @@ import { GenerateTripItineraryUseCase } from '../../application/use-cases/Genera
 import { AddDestinationUseCase } from '../../application/use-cases/AddDestinationUseCase';
 import { ReorderDestinationsUseCase } from '../../application/use-cases/ReorderDestinationsUseCase';
 import { GenerateTripBudgetUseCase } from '../../application/use-cases/GenerateTripBudgetUseCase';
+import { GenerateTripPackingListUseCase } from '../../application/use-cases/GenerateTripPackingListUseCase';
 
 // Estado em memória para controle de presença nas salas
 const activeUsers = new Map<string, { id: string, name: string, color: string }[]>();
@@ -49,10 +50,10 @@ export function setupTripSockets(io: Server) {
     const addDestUC = new AddDestinationUseCase(destinationRepo);
     const reorderDestUC = new ReorderDestinationsUseCase(destinationRepo);
     const tripRepo = new PrismaTripRepository(prisma);
-    const aiBudgetUC = new GenerateTripBudgetUseCase(aiService, tripRepo);
     
     // O UseCase de IA agora recebe o serviço da Groq e o repositório de Atividades
-    // ❌ O jeito que está dando erro:
+    const aiBudgetUC = new GenerateTripBudgetUseCase(aiService, tripRepo);
+    const aiPackingListUC = new GenerateTripPackingListUseCase(aiService, tripRepo);
     const aiItineraryUC = new GenerateTripItineraryUseCase(aiService, activityRepo);
 
     // --- EVENTOS DE PRESENÇA ---
@@ -134,13 +135,10 @@ export function setupTripSockets(io: Server) {
     socket.on('requestAIItinerary', async (data: { tripId: string, destinationId: string, destinationName: string }) => {
       try {
         console.log(`🤖 IA gerando roteiro para: ${data.destinationName}`);
-        
         // Executa a inteligência
         const newActivities = await aiItineraryUC.execute(data.destinationId, data.destinationName);
-
         // Dispara para todo mundo na sala ver a mágica acontecendo
         io.to(data.tripId).emit('activitiesGeneratedByAI', newActivities);
-        
         console.log(`✅ ${newActivities.length} atividades geradas com sucesso via Groq Llama 3!`);
       } catch (error) {
         console.error("Erro na geração por IA:", error);
@@ -157,6 +155,22 @@ export function setupTripSockets(io: Server) {
         console.error("Erro no orçamento por IA:", error);
         Sentry.captureException(error);
         socket.emit('error_message', 'A IA financeira falhou ao calcular o orçamento.');
+      }
+    });
+
+    socket.on('requestAIPackingList', async (tripId: string) => {
+      try {
+        console.log(`🎒 IA gerando checklist de bagagem para a viagem: ${tripId}`);
+        
+        const packingList = await aiPackingListUC.execute(tripId);
+
+        // Manda a resposta para a sala da viagem
+        io.to(tripId).emit('packingListGeneratedByAI', packingList);
+        
+        console.log(`✅ Checklist gerado com sucesso! Clima: ${packingList.weatherCondition}`);
+      } catch (error: any) {
+        console.error("Erro na bagagem por IA:", error);
+        socket.emit('error_message', error.message || 'A IA falhou ao gerar o checklist de bagagem.');
       }
     });
 

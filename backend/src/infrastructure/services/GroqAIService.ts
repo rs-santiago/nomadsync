@@ -1,5 +1,5 @@
 import Groq from "groq-sdk";
-import { IAIService, AISuggestion, AIBudgetEstimate } from "../../domain/services/IAIService";
+import { IAIService, AISuggestion, AIBudgetEstimate, AIPackingList } from "../../domain/services/IAIService";
 
 export class GroqAIService implements IAIService {
   private client: Groq;
@@ -82,6 +82,48 @@ export class GroqAIService implements IAIService {
     } catch (error) {
       console.error("Erro ao gerar orçamento:", error);
       throw new Error("Falha ao estimar orçamento");
+    }
+  }
+
+  async generatePackingList(destinationName: string, month: string, activities: string[]): Promise<AIPackingList> {
+    const activitiesList = activities.length > 0 
+      ? activities.join(', ') 
+      : 'Atividades gerais de turismo';
+
+    const prompt = `Você é um especialista em viagens. O usuário vai viajar para ${destinationName} no mês de ${month}.
+    Ele planeja fazer estas atividades: ${activitiesList}.
+    
+    Baseado no clima histórico desse destino nesse mês específico, e nas atividades planejadas, gere um checklist de bagagem inteligente.
+    
+    Retorne APENAS um objeto JSON estrito com esta estrutura:
+    {
+      "weatherCondition": "Resumo curto do clima esperado (ex: Frio e chuvoso)",
+      "temperature": "Estimativa de temperatura (ex: 5°C a 12°C)",
+      "checklist": {
+        "clothing": ["Item 1 com quantidade", "Item 2"],
+        "essentials": ["Item 1", "Item 2"],
+        "gadgets": ["Item 1", "Item 2"]
+      },
+      "tip": "Uma dica crucial sobre o clima ou costumes locais."
+    }`;
+
+    try {
+      const chatCompletion = await this.client.chat.completions.create({
+        messages: [
+          { role: "system", content: "Você é um assistente de viagens focado em clima e bagagem. Responda APENAS em JSON válido." },
+          { role: "user", content: prompt },
+        ],
+        model: "llama-3.3-70b-versatile",
+        response_format: { type: "json_object" },
+      });
+
+      const content = chatCompletion.choices[0]?.message?.content;
+      if (!content) throw new Error("Sem resposta da IA");
+
+      return JSON.parse(content) as AIPackingList;
+    } catch (error) {
+      console.error("Erro ao gerar checklist de bagagem:", error);
+      throw new Error("Falha ao gerar checklist");
     }
   }
 }

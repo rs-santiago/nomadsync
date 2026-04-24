@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTripStore } from '../store/useTripStore';
-import { useAuth } from '@clerk/clerk-react'; // 👈 Importamos o Clerk para segurança
+import { useAuth } from '@clerk/clerk-react'; 
 
 interface AddDestinationFormProps {
   tripId: string;
@@ -20,13 +20,11 @@ export function AddDestinationForm({ tripId }: AddDestinationFormProps) {
       return;
     }
 
-    setIsSubmitting(true); // Trava o botão para não dar clique duplo
+    setIsSubmitting(true); 
 
     try {
-      // 1. Pega o token de segurança do usuário logado
       const token = await getToken();
 
-      // 2. Faz o POST para a nossa rota no Backend (que busca a foto e salva no BD)
       const response = await fetch(`${import.meta.env.VITE_API_URL}/destinations`, {
         method: 'POST',
         headers: {
@@ -37,7 +35,7 @@ export function AddDestinationForm({ tripId }: AddDestinationFormProps) {
           name: newDestination,
           tripId: tripId,
           startDate: null, 
-          endDate: null // Por enquanto, criamos a parada sem datas. Depois o usuário pode editar e colocar as datas que quiser!
+          endDate: null 
          })
       });
 
@@ -45,37 +43,37 @@ export function AddDestinationForm({ tripId }: AddDestinationFormProps) {
         throw new Error('Falha ao salvar no servidor');
       }
 
-      // 3. Recebe a resposta OFICIAL (agora sim, com ID do Prisma e imageUrl!)
       const savedDestination = await response.json();
       
-      // 4. Atualiza a tela com o dado verdadeiro
       addLocalDestination(savedDestination);
-      
-      // 5. Limpa o texto
       setNewDestination('');
     } catch (error) {
       console.error("Erro ao adicionar destino:", error);
       alert("Ops! Houve um erro ao buscar a foto ou salvar o destino.");
     } finally {
-      setIsSubmitting(false); // Libera o botão
+      setIsSubmitting(false); 
     }
   };
 
   return (
-    <form onSubmit={handleAddDestination} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-4 sticky top-8">
-      <h3 className="font-bold text-slate-800">Nova Parada</h3>
+    <form 
+      onSubmit={handleAddDestination} 
+      className="bg-white p-5 shrink-0 z-10 relative border-b border-slate-200 flex flex-col gap-3"
+    >
+      <h3 className="text-lg font-bold text-slate-800">Nova Parada</h3>
+      
       <input 
         type="text" 
         placeholder="Ex: Paris, França" 
         value={newDestination}
         onChange={(e) => setNewDestination(e.target.value)}
         disabled={isSubmitting}
-        className="border border-slate-200 rounded-xl p-3 outline-none focus:border-blue-500 transition-colors disabled:bg-slate-50 disabled:text-slate-400"
+        className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400 transition-colors"
       />
       <button 
         type="submit" 
         disabled={isSubmitting}
-        className="bg-slate-900 text-white rounded-xl p-3 font-bold hover:bg-slate-800 transition-colors flex items-center justify-center disabled:bg-slate-400"
+        className="w-full bg-slate-900 text-white font-medium py-2.5 rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center disabled:bg-slate-400"
       >
         {isSubmitting ? 'Buscando foto...' : '+ Adicionar ao Roteiro'}
       </button>

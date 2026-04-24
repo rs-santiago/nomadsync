@@ -18,10 +18,10 @@ export class MapboxLocationService implements ILocationService {
         const data = await response.json();
 
         if (data.features && data.features.length > 0) {
-        // O Mapbox retorna um array 'center' no formato [longitude, latitude]
-        const [longitude, latitude] = data.features[0].center;
-        
-        return { latitude, longitude };
+          // O Mapbox retorna um array 'center' no formato [longitude, latitude]
+          const [longitude, latitude] = data.features[0].center;
+          
+          return { latitude, longitude };
         }
 
         return null;

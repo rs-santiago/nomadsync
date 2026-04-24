@@ -13,10 +13,12 @@ export class CreateDestinationUseCase {
     if (!data.name) throw new Error("O nome do destino é obrigatório.");
     if (!data.tripId) throw new Error("O ID da viagem é obrigatório.");
     // 1. Busca os dados nas APIs externas paralelamente (para ficar mais rápido!)
-    const [coordinates, imageUrl] = await Promise.all([
+    const [coordinates, imageUrl, order] = await Promise.all([
       this.locationService.getCoordinates(data.name),
-      this.photoService.getPhotoUrl(data.name)
+      this.photoService.getPhotoUrl(data.name),
+      this.destinationRepository.countByTripId(data.tripId)
     ]);
+    
     return await this.destinationRepository.create({
       name: data.name,
       startDate: data.startDate ? new Date(data.startDate) : null,
@@ -24,7 +26,8 @@ export class CreateDestinationUseCase {
       tripId: data.tripId,
       latitude: coordinates?.latitude || null,
       longitude: coordinates?.longitude || null,
-      imageUrl: imageUrl || null
+      imageUrl: imageUrl || null,
+      order: order 
     });
   }
 }

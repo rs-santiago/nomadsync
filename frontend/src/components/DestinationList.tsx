@@ -9,6 +9,7 @@ import type { DropResult } from '@hello-pangea/dnd';
 import { useAuth } from '@clerk/clerk-react';
 import { AIGeneratorButton } from './AIGeneratorButton';
 import { AIBudgetCard } from './AIBudgetCard';
+import { AIPackingCard } from './AIPackingCard';
 
 interface DestinationListProps {
   tripId: string;
@@ -185,10 +186,15 @@ export function DestinationList({ tripId }: DestinationListProps) {
         <MapPin size={20} className="text-blue-600" />
         Roteiro da Viagem
       </h2>
-      <AIBudgetCard 
-        tripId={tripId} 
-        destinationNames={destinations.map(d => d.name).join(', ')} 
-      />
+      <div className="flex flex-col gap-6 mb-8">
+        <AIBudgetCard 
+          tripId={tripId} 
+          destinationNames={destinations.map(d => d.name).join(', ')} 
+        />
+        <AIPackingCard 
+          tripId={tripId} 
+        />
+      </div>
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="destinations">
           {(provided) => (

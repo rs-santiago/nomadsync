@@ -27,7 +27,13 @@ const mockAIService: IAIService = {
       accommodation: 50
     },
     tips: 'Considere comprar um passe de transporte para economizar!'
-  })
+  }),
+  generatePackingList: vi.fn().mockResolvedValue([
+    'Camisetas leves',
+    'Tênis confortável',
+    'Adaptador de tomada',
+    'Câmera fotográfica'
+  ])
 };
 
 describe('GenerateTripItineraryUseCase', () => {

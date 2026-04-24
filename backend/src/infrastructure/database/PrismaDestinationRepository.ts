@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { IDestinationRepository } from '../../domain/repositories/IDestinationRepository';
+import { CreateDestinationData, IDestinationRepository } from '../../domain/repositories/IDestinationRepository';
 
 export class PrismaDestinationRepository implements IDestinationRepository {
   
@@ -11,23 +11,18 @@ export class PrismaDestinationRepository implements IDestinationRepository {
     return this.prisma.destination.count({ where: { tripId } });
   }
 
-  async create(data: { 
-    id: string; 
-    name: string; 
-    tripId: string; 
-    order: number;
-    startDate?: Date | null;
-    endDate?: Date | null;
-  }) {
+  async create(data: CreateDestinationData) {
     return this.prisma.destination.create({ 
       data: {
-        id: data.id,
         name: data.name,
         tripId: data.tripId,
-        order: data.order,
+        order: data.order ?? 0,
         // Proteção contra undefined (Strict Null Checks)
         startDate: data.startDate ?? null,
-        endDate: data.endDate ?? null
+        endDate: data.endDate ?? null,
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
+        imageUrl: data.imageUrl ?? null,
       } 
     });
   }

@@ -14,7 +14,8 @@ describe('CreateDestinationUseCase', () => {
   beforeEach(() => {
     mockDestinationRepository = {
       // vi.fn() cria uma função vazia que podemos espionar
-      create: vi.fn().mockResolvedValue({ id: 'fake-id', name: 'Paris', latitude: 48.85, longitude: 2.35, imageUrl: 'foto.jpg' }) 
+      create: vi.fn().mockResolvedValue({ id: 'fake-id', name: 'Paris', latitude: 48.85, longitude: 2.35, imageUrl: 'foto.jpg' }),
+      countByTripId: vi.fn().mockResolvedValue(0) // Simula que não tem destinos ainda
     };
 
     mockLocationService = {
