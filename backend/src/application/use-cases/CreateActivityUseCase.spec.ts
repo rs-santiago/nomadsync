@@ -2,11 +2,11 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CreateActivityUseCase } from './CreateActivityUseCase';
-import { CreateActivityData } from '../../domain/repositories/IActivityRepository';
+import { CreateActivityData, IActivityRepository } from '../../domain/repositories/IActivityRepository';
 
 describe('CreateActivityUseCase', () => {
   // 1. Variáveis para o Dublê e para o Use Case
-  let mockActivityRepository: any;
+  let mockActivityRepository: IActivityRepository;
   let useCase: CreateActivityUseCase;
 
   // 2. Antes de cada teste, instanciamos o dublê zerado
@@ -17,15 +17,18 @@ describe('CreateActivityUseCase', () => {
         id: 'act-123',
         title: 'Visita ao Museu do Louvre',
         type: 'museum',
-        destinationId: 'dest-456'
-      })
-    };
+        destinationId: 'dest-456',
+        isAiGenerated: false // 👈 Simula o retorno correto do banco
+      }),
+      // Adicionamos funções vazias para respeitar a interface
+      delete: vi.fn(), 
+    } as unknown as IActivityRepository;
 
     useCase = new CreateActivityUseCase(mockActivityRepository);
   });
 
-  // 👇 TESTE 1: Caminho Feliz
-  it('deve criar uma atividade com sucesso', async () => {
+  // 👇 TESTE 1: Caminho Feliz (Atualizado com a regra da IA)
+  it('deve criar uma atividade manual com sucesso e definir isAiGenerated como false', async () => {
     const input: CreateActivityData = {
       title: 'Visita ao Museu do Louvre',
       type: 'museum',
@@ -35,13 +38,17 @@ describe('CreateActivityUseCase', () => {
 
     const result = await useCase.execute(input);
 
-    // Verifica se o repositório foi chamado corretamente com os dados de entrada
-    expect(mockActivityRepository.create).toHaveBeenCalledWith(input);
+    // 👈 A MÁGICA: Verifica se o UseCase injetou o isAiGenerated: false antes de salvar
+    expect(mockActivityRepository.create).toHaveBeenCalledWith({
+      ...input,
+      isAiGenerated: false
+    });
     expect(mockActivityRepository.create).toHaveBeenCalledTimes(1);
     
     // Verifica se o retorno tem o ID gerado pelo "banco"
     expect(result).toHaveProperty('id', 'act-123');
     expect(result.title).toBe(input.title);
+    expect(result.isAiGenerated).toBe(false);
   });
 
   // 👇 TESTE 2: Regra de Negócio (Título obrigatório)

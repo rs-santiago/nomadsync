@@ -6,7 +6,10 @@ export class CreateActivityUseCase {
   async execute(data: CreateActivityData) {
     if (!data.title) throw new Error("O título da atividade é obrigatório.");
     if (!data.destinationId) throw new Error("O ID do destino é obrigatório.");
-
-    return await this.activityRepository.create(data);
+    
+    return await this.activityRepository.create({
+      ...data,
+      isAiGenerated: data.isAiGenerated ?? false, 
+    });
   }
 }
