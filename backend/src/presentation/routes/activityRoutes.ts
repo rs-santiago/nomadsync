@@ -4,10 +4,11 @@ import { PrismaActivityRepository } from '../../infrastructure/database/PrismaAc
 import { CreateActivityUseCase } from '../../application/use-cases/CreateActivityUseCase';
 import { DeleteActivityUseCase } from '../../application/use-cases/DeleteActivityUseCase';
 import { ActivityController } from '../controllers/ActivityController';
+import { prisma } from '../../lib/prisma';
 
 export const activityRoutes = (io: Server) => {
   const router = Router();
-  const repo = new PrismaActivityRepository();
+  const repo = new PrismaActivityRepository(prisma);
   const createUC = new CreateActivityUseCase(repo);
   const deleteUC = new DeleteActivityUseCase(repo);
   const controller = new ActivityController(createUC, deleteUC, io);

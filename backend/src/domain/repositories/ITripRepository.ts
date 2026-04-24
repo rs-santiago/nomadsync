@@ -9,6 +9,12 @@ export interface CreateTripData {
 
 export interface TripWithRelations {
   id: string;
+  ownerId: string;
+  title: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  imageUrl: string | null;
+  participants: string[]; // IDs dos participantes
   destinations: {
     id: string;
     activities: any[]; 
